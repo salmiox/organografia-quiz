@@ -1,0 +1,4597 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width,initial-scale=1" />
+<title>Quiz histología — Organografía</title>
+<style>
+  :root {
+    --bg: #f6f4ef;
+    --panel: #fff;
+    --ink: #1a1a1a;
+    --muted: #6b6b6b;
+    --accent: #1c4f8a;
+    --accent-soft: #e6eef9;
+    --blob: #e63946;
+    --shadow: 0 1px 3px rgba(0,0,0,.08), 0 4px 12px rgba(0,0,0,.06);
+    --sel: #2a8d3a;
+  }
+  * { box-sizing: border-box; }
+  html, body { margin: 0; padding: 0; background: var(--bg); color: var(--ink); font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Helvetica, Arial, sans-serif; }
+  body { padding: 18px 20px 60px; max-width: 1200px; margin: 0 auto; }
+
+  header.app {
+    display: flex; flex-wrap: wrap; gap: 12px; align-items: baseline; justify-content: space-between;
+    padding-bottom: 12px; border-bottom: 1px solid #e5e0d6; margin-bottom: 14px;
+  }
+  header.app h1 { font-size: 18px; margin: 0; font-weight: 600; color: var(--accent); }
+  header.app .sub { font-size: 13px; color: var(--muted); }
+
+  .toolbar {
+    display: flex; flex-wrap: wrap; gap: 8px; align-items: center;
+    padding: 10px 12px; background: var(--panel); border: 1px solid #e5e0d6; border-radius: 10px;
+    box-shadow: var(--shadow); margin-bottom: 14px; position: sticky; top: 10px; z-index: 20;
+  }
+  .toolbar .group { display: flex; gap: 6px; align-items: center; }
+  .toolbar .spacer { flex: 1; }
+  .toolbar .counter { font-size: 13px; color: var(--muted); font-variant-numeric: tabular-nums; min-width: 70px; text-align: center; }
+  .toolbar select { font-size: 13px; padding: 6px 8px; border: 1px solid #d6d0c4; border-radius: 6px; background: #fff; max-width: 360px; }
+  .toolbar label.lbl { font-size: 12px; color: var(--muted); margin-right: 2px; }
+
+  button.btn {
+    appearance: none; background: var(--accent-soft); color: var(--accent); border: 1px solid #c8d8ee;
+    padding: 7px 12px; border-radius: 7px; font-size: 13px; cursor: pointer; font-weight: 500;
+    transition: background .12s, transform .05s;
+  }
+  button.btn:hover { background: #d6e3f4; }
+  button.btn:active { transform: translateY(1px); }
+  button.btn.primary { background: var(--accent); color: #fff; border-color: var(--accent); }
+  button.btn.primary:hover { background: #163d6c; }
+  button.btn.ghost { background: #fff; color: var(--ink); border-color: #d6d0c4; }
+  button.btn.ghost:hover { background: #f1ece0; }
+  button.btn.danger { background: #fbeaea; color: #a8232c; border-color: #ecc8ca; }
+  button.btn.danger:hover { background: #f6d3d4; }
+  button.btn.edit { background: #f0e6d6; color: #6b4a1a; border-color: #e0c894; }
+  button.btn.edit.active { background: var(--sel); color: #fff; border-color: var(--sel); }
+  .dirty-dot { width:8px; height:8px; border-radius:50%; background:#e9a234; display:inline-block; vertical-align:middle; margin-right:6px; visibility:hidden; }
+  .dirty-dot.show { visibility:visible; }
+
+  .slide-title {
+    font-size: 15px; font-weight: 600; color: var(--ink);
+    margin: 6px 4px 10px; display: flex; gap: 10px; align-items: baseline;
+  }
+  .slide-title .pill {
+    font-size: 11px; font-weight: 600; padding: 2px 8px; border-radius: 99px;
+    background: var(--accent); color: #fff; letter-spacing: .04em;
+  }
+
+  .stage {
+    position: relative; background: #fff; border-radius: 12px; overflow: hidden;
+    box-shadow: var(--shadow); border: 1px solid #e5e0d6;
+  }
+  .stage img { display: block; width: 100%; height: auto; user-select: none; -webkit-user-drag: none; }
+
+  .overlay-layer { position: absolute; inset: 0; }
+
+  .blob {
+    position: absolute; cursor: pointer; user-select: none;
+    background: var(--blob); border-radius: 50%;
+    box-shadow: 0 1px 2px rgba(0,0,0,.25);
+    transition: opacity .15s, transform .08s;
+  }
+  .blob:hover { transform: scale(1.03); }
+  .blob.revealed { opacity: 0; pointer-events: none; }
+  .blob.flash { animation: flash .25s ease-out; }
+  @keyframes flash { 0% { transform: scale(1); } 50% { transform: scale(1.08); } 100% { transform: scale(1); } }
+  .stage.reveal-mode .blob { display: none; }
+
+  .stage.edit-mode { cursor: crosshair; }
+  .stage.edit-mode .blob {
+    opacity: .55 !important; pointer-events: auto !important; display: block !important;
+    cursor: move; outline: 1px solid rgba(0,0,0,.4); transition: none;
+  }
+  .stage.edit-mode .blob.selected {
+    outline: 2px solid var(--sel); box-shadow: 0 0 0 2px rgba(42,141,58,.35);
+    opacity: .7 !important;
+  }
+  .stage.edit-mode .blob.selected .handle {
+    display: block;
+    position: absolute; width: 14px; height: 14px; background: #fff; border: 2px solid var(--sel);
+    border-radius: 3px; right: -7px; bottom: -7px; cursor: nwse-resize;
+  }
+  .blob .label-text { display: none; }
+  .stage.edit-mode .blob.selected .label-text {
+    display: block;
+    position: absolute; left: 50%; top: 100%; transform: translateX(-50%);
+    font-size: 11px; padding: 2px 5px; background: var(--sel); color: #fff; border-radius: 3px;
+    white-space: nowrap; margin-top: 4px; pointer-events: none; z-index: 5;
+  }
+  .blob .handle { display: none; }
+
+  footer.app { margin-top: 18px; font-size: 12px; color: var(--muted); text-align: center; }
+  footer.app code { background: #fff; padding: 1px 5px; border-radius: 4px; border: 1px solid #e5e0d6; }
+
+  .stats { font-size: 12px; color: var(--muted); margin: 6px 4px 0; font-variant-numeric: tabular-nums; }
+  .stats b { color: var(--ink); font-weight: 600; }
+  .help { font-size: 12px; color: var(--muted); margin: 6px 4px 0; }
+  .help.edit { background: #fff8e6; border: 1px solid #f1d97a; padding: 8px 12px; border-radius: 8px; color: #5a4516; display: none; }
+  .stage.edit-mode ~ .help.edit, body.edit-active .help.edit { display: block; }
+  .help kbd { background:#fff; border:1px solid #d6d0c4; border-bottom-width:2px; padding:1px 5px; border-radius:4px; font-family:inherit; font-size:11px; }
+
+  @media print {
+    body { padding: 0; }
+    header.app, .toolbar, footer.app, .stats, .help { display: none; }
+    .stage { border: none; box-shadow: none; }
+    .blob { display: none !important; }
+  }
+</style>
+</head>
+<body>
+
+<header class="app">
+  <div>
+    <h1>Quiz de histología — Organografía Microscópica</h1>
+    <div class="sub">Click sobre cada mancha para revelar el nombre · usa el selector para cambiar de tema</div>
+  </div>
+  <div class="sub" id="modeIndicator">Modo: <b>Quiz</b></div>
+</header>
+
+<div class="toolbar">
+  <div class="group">
+    <label class="lbl" for="temaSelect">Tema</label>
+    <select id="temaSelect" aria-label="Tema"></select>
+  </div>
+  <div class="group">
+    <button class="btn ghost" id="prevBtn">◀</button>
+    <span class="counter" id="counter">–</span>
+    <button class="btn ghost" id="nextBtn">▶</button>
+  </div>
+  <div class="group">
+    <select id="slideSelect" aria-label="Saltar a diapositiva"></select>
+  </div>
+  <div class="spacer"></div>
+  <div class="group">
+    <button class="btn" id="revealAllBtn">Revelar todo</button>
+    <button class="btn ghost" id="hideAllBtn">Ocultar todo</button>
+    <button class="btn primary" id="toggleAnswerBtn">Modo respuesta</button>
+  </div>
+  <div class="group">
+    <button class="btn ghost" id="randomBtn" title="Saltar a una imagen aleatoria de todos los temas">🎲</button>
+    <button class="btn edit" id="editBtn" title="Modo edición (E)">✎ Editar</button>
+    <button class="btn ghost" id="saveBtn" title="Exportar labels.json"><span class="dirty-dot" id="dirtyDot"></span>💾 Guardar</button>
+    <button class="btn ghost" id="loadBtn" title="Cargar labels.json">📂</button>
+    <button class="btn ghost" id="resetBtn" title="Descartar cambios locales">↺</button>
+  </div>
+</div>
+
+<div class="slide-title">
+  <span class="pill" id="slidePill">—</span>
+  <span id="slideTitle">—</span>
+</div>
+
+<div class="stats" id="stats">—</div>
+<div class="help edit" id="editHelp">
+  <b>Modo edición</b> · arrastra una mancha para moverla · arrastra el cuadradito verde para redimensionar ·
+  <kbd>doble-click</kbd> en zona vacía para añadir · <kbd>doble-click</kbd> en mancha para renombrar · <kbd>Supr</kbd> para borrar la seleccionada ·
+  <kbd>←↑→↓</kbd> mueve 0.5% (con <kbd>Shift</kbd>: 0.1%) · <kbd>+/-</kbd> tamaño · cambios <b>se guardan automáticamente en el navegador</b>; pulsa 💾 para volcar al disco.
+</div>
+
+<div class="stage" id="stage">
+  <img id="slideImg" alt="" />
+  <div class="overlay-layer" id="overlayLayer"></div>
+</div>
+
+<footer class="app">
+  Archivo local — abrir con doble click. Datos guardados en el navegador (localStorage) hasta exportar a <code>labels-completo.json</code>.
+</footer>
+
+<script>
+// ============================================================================
+// Datos base (inlined desde labels-completo.json al construir el HTML)
+// Cada key es relativa a _quiz_imgs/ (ej. "T22/t22-p05-img1.png").
+// Cada entry tiene { title, tema, asignatura?, labels: [{text,x,y,w,h}] }.
+// ============================================================================
+const BASE_DATA = {
+  "T04-Digestivo/t04sdigcav-p15-1.png": {
+    "title": "Cavidad oral — lengua (papilas linguales y musculatura esquelética)",
+    "tema": "T04-Digestivo",
+    "labels": [
+      {
+        "text": "làmina pròpia",
+        "x": 30,
+        "y": 5,
+        "w": 22,
+        "h": 14
+      },
+      {
+        "text": "epiteli",
+        "x": 70,
+        "y": 4,
+        "w": 18,
+        "h": 14
+      },
+      {
+        "text": "múscul esquelètic",
+        "x": 32,
+        "y": 42,
+        "w": 28,
+        "h": 16
+      },
+      {
+        "text": "múscul esquelètic",
+        "x": 32,
+        "y": 68,
+        "w": 28,
+        "h": 16
+      }
+    ]
+  },
+  "T04-Digestivo/t04sdigcav-p24-1.png": {
+    "title": "Glándula salival — submaxilar (acinos mucosos y serosos)",
+    "tema": "T04-Digestivo",
+    "labels": [
+      {
+        "text": "acino mucoso",
+        "x": 30,
+        "y": 30,
+        "w": 16,
+        "h": 18
+      },
+      {
+        "text": "acino seroso",
+        "x": 60,
+        "y": 18,
+        "w": 16,
+        "h": 16
+      },
+      {
+        "text": "conducto intercalar",
+        "x": 42,
+        "y": 55,
+        "w": 18,
+        "h": 14
+      }
+    ]
+  },
+  "T04-Digestivo/t04sdigcav-p25-2.png": {
+    "title": "Glándula salival — parótida (acinos serosos)",
+    "tema": "T04-Digestivo",
+    "labels": [
+      {
+        "text": "acino seroso",
+        "x": 28,
+        "y": 30,
+        "w": 18,
+        "h": 18
+      },
+      {
+        "text": "acino seroso",
+        "x": 58,
+        "y": 50,
+        "w": 18,
+        "h": 18
+      },
+      {
+        "text": "septo de tejido conjuntivo",
+        "x": 5,
+        "y": 60,
+        "w": 22,
+        "h": 14
+      }
+    ]
+  },
+  "T04-Digestivo/t04sdigcav-p26-1.png": {
+    "title": "Amígdala — folículos linfoides con centro germinal (cavidad oral)",
+    "tema": "T04-Digestivo",
+    "labels": [
+      {
+        "text": "fol·licle limfoide",
+        "x": 4,
+        "y": 28,
+        "w": 22,
+        "h": 16
+      },
+      {
+        "text": "centre germinal",
+        "x": 70,
+        "y": 6,
+        "w": 22,
+        "h": 16
+      },
+      {
+        "text": "centre germinal",
+        "x": 58,
+        "y": 38,
+        "w": 20,
+        "h": 16
+      },
+      {
+        "text": "fol·licle limfoide",
+        "x": 30,
+        "y": 58,
+        "w": 22,
+        "h": 16
+      }
+    ]
+  },
+  "T04-Digestivo/t04sdiggla-p02-1.png": {
+    "title": "Glándula salival — parótida (acinos serosos, panorámica)",
+    "tema": "T04-Digestivo",
+    "labels": [
+      {
+        "text": "acino seroso",
+        "x": 30,
+        "y": 30,
+        "w": 16,
+        "h": 16
+      },
+      {
+        "text": "septo de teixit conjuntiu",
+        "x": 40,
+        "y": 6,
+        "w": 26,
+        "h": 14
+      },
+      {
+        "text": "acino seroso",
+        "x": 58,
+        "y": 48,
+        "w": 16,
+        "h": 16
+      }
+    ]
+  },
+  "T04-Digestivo/t04sdiggla-p09-1.png": {
+    "title": "Glándula salival — submaxilar (acinos serosos y conducto intercalar)",
+    "tema": "T04-Digestivo",
+    "labels": [
+      {
+        "text": "acino seroso (S)",
+        "x": 60,
+        "y": 18,
+        "w": 16,
+        "h": 16
+      },
+      {
+        "text": "conducto intercalar (ID)",
+        "x": 26,
+        "y": 38,
+        "w": 18,
+        "h": 16
+      },
+      {
+        "text": "acino seroso (S)",
+        "x": 50,
+        "y": 60,
+        "w": 16,
+        "h": 16
+      }
+    ]
+  },
+  "T04-Digestivo/t04sdiggla-p09-2.png": {
+    "title": "Glándula salival — parótida (acinos serosos con conductos)",
+    "tema": "T04-Digestivo",
+    "labels": [
+      {
+        "text": "acino seroso",
+        "x": 28,
+        "y": 40,
+        "w": 16,
+        "h": 16
+      },
+      {
+        "text": "conducto",
+        "x": 55,
+        "y": 28,
+        "w": 16,
+        "h": 14
+      },
+      {
+        "text": "septo conjuntivo",
+        "x": 8,
+        "y": 60,
+        "w": 22,
+        "h": 14
+      }
+    ]
+  },
+  "T04-Digestivo/t04sdiggla-p10-2.png": {
+    "title": "Glándula salival — conducto estriado (detalle, células con estriaciones basales)",
+    "tema": "T04-Digestivo",
+    "labels": [
+      {
+        "text": "células del conducto estriado (M)",
+        "x": 38,
+        "y": 30,
+        "w": 28,
+        "h": 24
+      },
+      {
+        "text": "luz del conducto",
+        "x": 40,
+        "y": 8,
+        "w": 16,
+        "h": 12
+      },
+      {
+        "text": "núcleo basal",
+        "x": 8,
+        "y": 38,
+        "w": 18,
+        "h": 14
+      }
+    ]
+  },
+  "T04-Digestivo/t04sdiggla-p12-1.png": {
+    "title": "Glándula salival — conducto estriado (detalle a gran aumento)",
+    "tema": "T04-Digestivo",
+    "labels": [
+      {
+        "text": "células del conducto estriado (M)",
+        "x": 38,
+        "y": 30,
+        "w": 28,
+        "h": 24
+      },
+      {
+        "text": "luz del conducto",
+        "x": 40,
+        "y": 8,
+        "w": 16,
+        "h": 12
+      },
+      {
+        "text": "núcleo basal",
+        "x": 8,
+        "y": 38,
+        "w": 18,
+        "h": 14
+      }
+    ]
+  },
+  "T04-Digestivo/t04sdiggla-p13-1.png": {
+    "title": "Glándula salival — submaxilar (acinos serosos y conducto intercalar)",
+    "tema": "T04-Digestivo",
+    "labels": [
+      {
+        "text": "acino seroso (S)",
+        "x": 60,
+        "y": 18,
+        "w": 16,
+        "h": 16
+      },
+      {
+        "text": "conducto intercalar (ID)",
+        "x": 26,
+        "y": 38,
+        "w": 18,
+        "h": 16
+      },
+      {
+        "text": "acino seroso (S)",
+        "x": 50,
+        "y": 60,
+        "w": 16,
+        "h": 16
+      }
+    ]
+  },
+  "T04-Digestivo/t04sdiggla-p17-1.png": {
+    "title": "Glándula salival — sublingual (acinos mucosos predominantes)",
+    "tema": "T04-Digestivo",
+    "labels": [
+      {
+        "text": "acino mucoso",
+        "x": 30,
+        "y": 30,
+        "w": 18,
+        "h": 16
+      },
+      {
+        "text": "semilunas de von Ebner",
+        "x": 28,
+        "y": 12,
+        "w": 30,
+        "h": 12
+      },
+      {
+        "text": "acino mucoso",
+        "x": 55,
+        "y": 55,
+        "w": 18,
+        "h": 16
+      }
+    ]
+  },
+  "T04-Digestivo/t04sdiggla-p18-1.png": {
+    "title": "Glándula salival — conductos estriados intralobulillares",
+    "tema": "T04-Digestivo",
+    "labels": [
+      {
+        "text": "conducto estriado",
+        "x": 40,
+        "y": 10,
+        "w": 26,
+        "h": 16
+      },
+      {
+        "text": "acinos",
+        "x": 20,
+        "y": 45,
+        "w": 18,
+        "h": 16
+      },
+      {
+        "text": "acinos",
+        "x": 60,
+        "y": 55,
+        "w": 18,
+        "h": 16
+      }
+    ]
+  },
+  "T04-Digestivo/t04sdiggla-p23-1.png": {
+    "title": "Glándula salival — conducto estriado e interlobulillar",
+    "tema": "T04-Digestivo",
+    "labels": [
+      {
+        "text": "conducto estriado",
+        "x": 58,
+        "y": 18,
+        "w": 24,
+        "h": 14
+      },
+      {
+        "text": "conducto interlobulillar",
+        "x": 40,
+        "y": 42,
+        "w": 28,
+        "h": 14
+      },
+      {
+        "text": "acinos",
+        "x": 8,
+        "y": 55,
+        "w": 18,
+        "h": 16
+      }
+    ]
+  },
+  "T04-Digestivo/t04sdigeso-p13-1.png": {
+    "title": "Esófago — muscular (transición músculo esquelético/liso)",
+    "tema": "T04-Digestivo",
+    "labels": [
+      {
+        "text": "capa muscular circular interna",
+        "x": 35,
+        "y": 4,
+        "w": 30,
+        "h": 12
+      },
+      {
+        "text": "plexo mientérico (de Auerbach)",
+        "x": 30,
+        "y": 38,
+        "w": 32,
+        "h": 14
+      },
+      {
+        "text": "capa muscular longitudinal externa",
+        "x": 30,
+        "y": 78,
+        "w": 34,
+        "h": 14
+      }
+    ]
+  },
+  "T04-Digestivo/t04sdigeso-p13-2.png": {
+    "title": "Esófago — transición de músculo esquelético (Sk) a liso (Sm)",
+    "tema": "T04-Digestivo",
+    "labels": [
+      {
+        "text": "múscul llis (Sm)",
+        "x": 60,
+        "y": 10,
+        "w": 18,
+        "h": 16
+      },
+      {
+        "text": "múscul esquelètic (Sk)",
+        "x": 6,
+        "y": 38,
+        "w": 22,
+        "h": 16
+      },
+      {
+        "text": "múscul llis (Sm)",
+        "x": 58,
+        "y": 48,
+        "w": 18,
+        "h": 16
+      }
+    ]
+  },
+  "T04-Digestivo/t04sdigest-p01-1.png": {
+    "title": "Estómago — pared completa (panorámica de mucosa a muscular)",
+    "tema": "T04-Digestivo",
+    "labels": [
+      {
+        "text": "mucosa (foveolas y glándulas)",
+        "x": 25,
+        "y": 6,
+        "w": 30,
+        "h": 22
+      },
+      {
+        "text": "submucosa",
+        "x": 25,
+        "y": 60,
+        "w": 28,
+        "h": 14
+      },
+      {
+        "text": "muscular externa",
+        "x": 25,
+        "y": 80,
+        "w": 28,
+        "h": 14
+      }
+    ]
+  },
+  "T04-Digestivo/t04sdigest-p14-1.png": {
+    "title": "Estómago — fundus (glándulas gástricas: parietales y principales)",
+    "tema": "T04-Digestivo",
+    "labels": [
+      {
+        "text": "cripta (foveola gástrica)",
+        "x": 4,
+        "y": 4,
+        "w": 22,
+        "h": 16
+      },
+      {
+        "text": "células parietales (acidófilas)",
+        "x": 40,
+        "y": 22,
+        "w": 26,
+        "h": 16
+      },
+      {
+        "text": "células principales (basófilas)",
+        "x": 38,
+        "y": 60,
+        "w": 28,
+        "h": 16
+      }
+    ]
+  },
+  "T04-Digestivo/t04sdigint-p24-1.png": {
+    "title": "Intestino grueso — colon (criptas de Lieberkühn y células caliciformes)",
+    "tema": "T04-Digestivo",
+    "labels": [
+      {
+        "text": "cèl·lules caliciformes",
+        "x": 18,
+        "y": 38,
+        "w": 28,
+        "h": 16
+      },
+      {
+        "text": "cèl·lules absortives",
+        "x": 56,
+        "y": 6,
+        "w": 24,
+        "h": 12
+      },
+      {
+        "text": "epiteli de revestiment",
+        "x": 70,
+        "y": 30,
+        "w": 24,
+        "h": 14
+      },
+      {
+        "text": "cripta de Lieberkühn",
+        "x": 60,
+        "y": 60,
+        "w": 28,
+        "h": 16
+      }
+    ]
+  },
+  "T04-Digestivo/t04sdigfet-p01-1.png": {
+    "title": "Hígado — parénquima (cordones de hepatocitos, panorámica)",
+    "tema": "T04-Digestivo",
+    "labels": [
+      {
+        "text": "hepatocitos",
+        "x": 30,
+        "y": 20,
+        "w": 22,
+        "h": 18
+      },
+      {
+        "text": "sinusoides",
+        "x": 55,
+        "y": 55,
+        "w": 22,
+        "h": 14
+      },
+      {
+        "text": "vena central",
+        "x": 20,
+        "y": 60,
+        "w": 18,
+        "h": 14
+      }
+    ]
+  },
+  "T04-Digestivo/t04sdigfet-p08-1.png": {
+    "title": "Hígado — lobulillo hepático (vena central y espacios porta)",
+    "tema": "T04-Digestivo",
+    "labels": [
+      {
+        "text": "vena central (V)",
+        "x": 32,
+        "y": 42,
+        "w": 18,
+        "h": 16
+      },
+      {
+        "text": "espacio porta (T)",
+        "x": 6,
+        "y": 28,
+        "w": 18,
+        "h": 14
+      },
+      {
+        "text": "espacio porta (T)",
+        "x": 72,
+        "y": 18,
+        "w": 18,
+        "h": 14
+      },
+      {
+        "text": "cordones de hepatocitos (C)",
+        "x": 50,
+        "y": 60,
+        "w": 24,
+        "h": 16
+      }
+    ]
+  },
+  "T04-Digestivo/t04sdigfet-p08-2.png": {
+    "title": "Hígado — espacios porta y vena central (panorámica)",
+    "tema": "T04-Digestivo",
+    "labels": [
+      {
+        "text": "espacio porta (T)",
+        "x": 10,
+        "y": 20,
+        "w": 18,
+        "h": 14
+      },
+      {
+        "text": "vena central (V)",
+        "x": 55,
+        "y": 50,
+        "w": 18,
+        "h": 16
+      },
+      {
+        "text": "espacio porta (T)",
+        "x": 75,
+        "y": 65,
+        "w": 18,
+        "h": 14
+      }
+    ]
+  },
+  "T04-Digestivo/t04sdigfet-p09-1.png": {
+    "title": "Hígado — espacio porta y vena central del lobulillo",
+    "tema": "T04-Digestivo",
+    "labels": [
+      {
+        "text": "espai porta",
+        "x": 6,
+        "y": 18,
+        "w": 22,
+        "h": 14
+      },
+      {
+        "text": "vena central del lòbul",
+        "x": 56,
+        "y": 32,
+        "w": 30,
+        "h": 14
+      },
+      {
+        "text": "vena central del lòbul",
+        "x": 28,
+        "y": 58,
+        "w": 30,
+        "h": 14
+      },
+      {
+        "text": "espai porta",
+        "x": 4,
+        "y": 50,
+        "w": 20,
+        "h": 14
+      }
+    ]
+  },
+  "T04-Digestivo/t04sdigfet-p09-2.png": {
+    "title": "Hígado — espacio porta y vena central (panorámica)",
+    "tema": "T04-Digestivo",
+    "labels": [
+      {
+        "text": "espai porta",
+        "x": 30,
+        "y": 14,
+        "w": 22,
+        "h": 14
+      },
+      {
+        "text": "vena central del lòbul",
+        "x": 45,
+        "y": 42,
+        "w": 30,
+        "h": 14
+      },
+      {
+        "text": "espai porta",
+        "x": 78,
+        "y": 70,
+        "w": 20,
+        "h": 14
+      }
+    ]
+  },
+  "T04-Digestivo/t04sdigfet-p11-1.png": {
+    "title": "Hígado fetal — hematopoyesis (panorámica)",
+    "tema": "T04-Digestivo",
+    "labels": [
+      {
+        "text": "islotes de hematopoyesis",
+        "x": 35,
+        "y": 30,
+        "w": 28,
+        "h": 18
+      },
+      {
+        "text": "cordones de hepatocitos",
+        "x": 55,
+        "y": 55,
+        "w": 26,
+        "h": 16
+      },
+      {
+        "text": "vena",
+        "x": 8,
+        "y": 70,
+        "w": 16,
+        "h": 14
+      }
+    ]
+  },
+  "T04-Digestivo/t04sdigfet-p12-1.png": {
+    "title": "Hígado — lobulillo con vena central (cordones radiales)",
+    "tema": "T04-Digestivo",
+    "labels": [
+      {
+        "text": "vena central",
+        "x": 42,
+        "y": 42,
+        "w": 16,
+        "h": 16
+      },
+      {
+        "text": "cordones de hepatocitos",
+        "x": 18,
+        "y": 22,
+        "w": 26,
+        "h": 16
+      },
+      {
+        "text": "sinusoides",
+        "x": 62,
+        "y": 60,
+        "w": 22,
+        "h": 14
+      }
+    ]
+  },
+  "T04-Digestivo/t04sdigfet-p13-1.png": {
+    "title": "Hígado — vena central y sinusoides (detalle)",
+    "tema": "T04-Digestivo",
+    "labels": [
+      {
+        "text": "vena central (V)",
+        "x": 44,
+        "y": 70,
+        "w": 18,
+        "h": 16
+      },
+      {
+        "text": "cordones de hepatocitos",
+        "x": 20,
+        "y": 25,
+        "w": 26,
+        "h": 16
+      },
+      {
+        "text": "sinusoides",
+        "x": 58,
+        "y": 40,
+        "w": 22,
+        "h": 14
+      }
+    ]
+  },
+  "T04-Digestivo/t04sdigfet-p30-1.png": {
+    "title": "Hígado — hepatocitos y sinusoides (gran aumento)",
+    "tema": "T04-Digestivo",
+    "labels": [
+      {
+        "text": "hepatocito (núcleo central)",
+        "x": 30,
+        "y": 35,
+        "w": 22,
+        "h": 20
+      },
+      {
+        "text": "sinusoide",
+        "x": 55,
+        "y": 18,
+        "w": 22,
+        "h": 14
+      },
+      {
+        "text": "célula de Kupffer",
+        "x": 18,
+        "y": 60,
+        "w": 22,
+        "h": 14
+      }
+    ]
+  },
+  "T04-Digestivo/t04sdigfet-p34-1.png": {
+    "title": "Páncreas — exocrino con conducto interlobulillar (P)",
+    "tema": "T04-Digestivo",
+    "labels": [
+      {
+        "text": "conducto interlobulillar (P)",
+        "x": 62,
+        "y": 18,
+        "w": 26,
+        "h": 18
+      },
+      {
+        "text": "acinos serosos",
+        "x": 25,
+        "y": 45,
+        "w": 24,
+        "h": 18
+      },
+      {
+        "text": "septo conjuntivo",
+        "x": 8,
+        "y": 60,
+        "w": 22,
+        "h": 14
+      }
+    ]
+  },
+  "T04-Digestivo/t04sdigfet-p34-2.png": {
+    "title": "Páncreas — conducto interlobulillar y acinos serosos",
+    "tema": "T04-Digestivo",
+    "labels": [
+      {
+        "text": "conducto interlobulillar",
+        "x": 42,
+        "y": 38,
+        "w": 24,
+        "h": 20
+      },
+      {
+        "text": "acinos serosos",
+        "x": 18,
+        "y": 25,
+        "w": 24,
+        "h": 18
+      },
+      {
+        "text": "acinos serosos",
+        "x": 62,
+        "y": 60,
+        "w": 24,
+        "h": 18
+      }
+    ]
+  },
+  "T04-Digestivo/t04sdigfet-p48-1.png": {
+    "title": "Vesícula biliar — mucosa con pliegues y glándulas mucosas",
+    "tema": "T04-Digestivo",
+    "labels": [
+      {
+        "text": "pliegues de la mucosa",
+        "x": 40,
+        "y": 12,
+        "w": 30,
+        "h": 18
+      },
+      {
+        "text": "glàndules mucoses",
+        "x": 30,
+        "y": 60,
+        "w": 28,
+        "h": 16
+      },
+      {
+        "text": "epitelio cilíndrico simple",
+        "x": 60,
+        "y": 35,
+        "w": 28,
+        "h": 14
+      }
+    ]
+  },
+  "T04-Digestivo/t04sdigfet-p49-1.png": {
+    "title": "Vesícula biliar — mucosa plegada (luz, V)",
+    "tema": "T04-Digestivo",
+    "labels": [
+      {
+        "text": "luz de la vesícula (V)",
+        "x": 40,
+        "y": 28,
+        "w": 18,
+        "h": 16
+      },
+      {
+        "text": "pliegues de la mucosa",
+        "x": 18,
+        "y": 12,
+        "w": 28,
+        "h": 16
+      },
+      {
+        "text": "epitelio cilíndrico simple",
+        "x": 60,
+        "y": 60,
+        "w": 28,
+        "h": 16
+      }
+    ]
+  },
+  "T04-Digestivo/t04sdigpan-p03-1.png": {
+    "title": "Páncreas — endocrino y exocrino (islote de Langerhans y acinos)",
+    "tema": "T04-Digestivo",
+    "labels": [
+      {
+        "text": "islote de Langerhans",
+        "x": 55,
+        "y": 18,
+        "w": 26,
+        "h": 18
+      },
+      {
+        "text": "acinos serosos (exocrino)",
+        "x": 30,
+        "y": 55,
+        "w": 28,
+        "h": 18
+      },
+      {
+        "text": "conducto interlobulillar",
+        "x": 6,
+        "y": 35,
+        "w": 20,
+        "h": 16
+      }
+    ]
+  },
+  "T04-Digestivo/t04sdigpan-p06-1.png": {
+    "title": "Páncreas — exocrino (acinos serosos, detalle)",
+    "tema": "T04-Digestivo",
+    "labels": [
+      {
+        "text": "acino seroso",
+        "x": 30,
+        "y": 30,
+        "w": 22,
+        "h": 18
+      },
+      {
+        "text": "célula centroacinar",
+        "x": 45,
+        "y": 38,
+        "w": 22,
+        "h": 14
+      },
+      {
+        "text": "núcleo basal redondo",
+        "x": 18,
+        "y": 60,
+        "w": 24,
+        "h": 14
+      }
+    ]
+  },
+  "T04-Digestivo/t04sdigpan-p07-2.png": {
+    "title": "Páncreas — exocrino (acinos serosos a gran aumento)",
+    "tema": "T04-Digestivo",
+    "labels": [
+      {
+        "text": "acino seroso",
+        "x": 30,
+        "y": 35,
+        "w": 22,
+        "h": 18
+      },
+      {
+        "text": "gránulos de cimógeno (apical)",
+        "x": 50,
+        "y": 25,
+        "w": 26,
+        "h": 16
+      },
+      {
+        "text": "núcleo basal redondo",
+        "x": 18,
+        "y": 60,
+        "w": 24,
+        "h": 14
+      }
+    ]
+  },
+  "T05-Sangre/t05sangcv-p01-1.png": {
+    "title": "Sangre y hematopoyesis — capilar/glomérulo con eritrocitos (portátil de título)",
+    "tema": "T05-Sangre",
+    "labels": [
+      {
+        "text": "Eritrocitos (luz vascular)",
+        "x": 38,
+        "y": 30,
+        "w": 26,
+        "h": 22
+      }
+    ]
+  },
+  "T05-Sangre/t05sangcv-p04-1.png": {
+    "title": "Sangre — capilar con eritrocitos a bajo aumento",
+    "tema": "T05-Sangre",
+    "labels": [
+      {
+        "text": "Eritrocitos (luz vascular)",
+        "x": 28,
+        "y": 28,
+        "w": 40,
+        "h": 35
+      }
+    ]
+  },
+  "T05-Sangre/t05sangcv-p06-1.png": {
+    "title": "Plaqueta — microscopía electrónica (gránulos delta densos)",
+    "tema": "T05-Sangre",
+    "labels": [
+      {
+        "text": "Gránulos densos (delta)",
+        "x": 18,
+        "y": 28,
+        "w": 14,
+        "h": 22
+      },
+      {
+        "text": "Gránulos densos (delta)",
+        "x": 42,
+        "y": 40,
+        "w": 14,
+        "h": 22
+      },
+      {
+        "text": "Sistema canalicular abierto",
+        "x": 70,
+        "y": 55,
+        "w": 16,
+        "h": 16
+      }
+    ]
+  },
+  "T05-Sangre/t05sangcv-p09-1.png": {
+    "title": "Plaqueta — MET (sistema tubular y gránulos)",
+    "tema": "T05-Sangre",
+    "labels": [
+      {
+        "text": "Gránulos / sistema tubular",
+        "x": 35,
+        "y": 38,
+        "w": 24,
+        "h": 30
+      }
+    ]
+  },
+  "T05-Sangre/t05sangcv-p15-1.png": {
+    "title": "Basófilo — MET (gránulos citoplásmicos azurófilos)",
+    "tema": "T05-Sangre",
+    "labels": [
+      {
+        "text": "Núcleo (segmentado)",
+        "x": 30,
+        "y": 28,
+        "w": 26,
+        "h": 30
+      },
+      {
+        "text": "Gránulos citoplásmicos (basofilia)",
+        "x": 60,
+        "y": 40,
+        "w": 22,
+        "h": 22
+      }
+    ]
+  },
+  "T05-Sangre/t05sangcv-p25-1.png": {
+    "title": "Leucocito polimorfonuclear — MET (núcleo multilobulado)",
+    "tema": "T05-Sangre",
+    "labels": [
+      {
+        "text": "Núcleo multilobulado",
+        "x": 18,
+        "y": 18,
+        "w": 38,
+        "h": 38
+      },
+      {
+        "text": "Gránulos específicos",
+        "x": 30,
+        "y": 45,
+        "w": 28,
+        "h": 24
+      }
+    ]
+  },
+  "T05-Sangre/t05sangcv-p30-1.png": {
+    "title": "Frotis sanguíneo — panel de leucocitos por tipo",
+    "tema": "T05-Sangre",
+    "labels": [
+      {
+        "text": "Neutrófilo segmentado",
+        "x": 22,
+        "y": 4,
+        "w": 14,
+        "h": 13
+      },
+      {
+        "text": "Neutrófilo en banda",
+        "x": 22,
+        "y": 22,
+        "w": 14,
+        "h": 13
+      },
+      {
+        "text": "Linfocito",
+        "x": 22,
+        "y": 40,
+        "w": 14,
+        "h": 13
+      },
+      {
+        "text": "Monocito",
+        "x": 22,
+        "y": 56,
+        "w": 16,
+        "h": 14
+      },
+      {
+        "text": "Eosinófilo",
+        "x": 22,
+        "y": 72,
+        "w": 15,
+        "h": 13
+      },
+      {
+        "text": "Basófilo",
+        "x": 22,
+        "y": 87,
+        "w": 15,
+        "h": 12
+      }
+    ]
+  },
+  "T05-Sangre/t05sangcv-p33-1.png": {
+    "title": "Frotis sanguíneo — eritrocitos y plaquetas (flechas)",
+    "tema": "T05-Sangre",
+    "labels": [
+      {
+        "text": "Plaqueta",
+        "x": 28,
+        "y": 32,
+        "w": 9,
+        "h": 11
+      },
+      {
+        "text": "Plaqueta",
+        "x": 52,
+        "y": 34,
+        "w": 9,
+        "h": 11
+      },
+      {
+        "text": "Plaqueta",
+        "x": 16,
+        "y": 62,
+        "w": 9,
+        "h": 11
+      },
+      {
+        "text": "Plaqueta",
+        "x": 78,
+        "y": 76,
+        "w": 9,
+        "h": 11
+      },
+      {
+        "text": "Eritrocito (palidez central)",
+        "x": 45,
+        "y": 55,
+        "w": 12,
+        "h": 14
+      }
+    ]
+  },
+  "T05-Sangre/t05hematopo-p01-1.png": {
+    "title": "Médula ósea — hematopoyesis a bajo aumento",
+    "tema": "T05-Sangre",
+    "labels": [
+      {
+        "text": "Megacariocito",
+        "x": 6,
+        "y": 60,
+        "w": 14,
+        "h": 22
+      },
+      {
+        "text": "Precursores hematopoyéticos",
+        "x": 40,
+        "y": 18,
+        "w": 24,
+        "h": 22
+      }
+    ]
+  },
+  "T05-Sangre/t05hematopo-p03-1.png": {
+    "title": "Médula ósea — sinusoides y compartimento hematopoyético",
+    "tema": "T05-Sangre",
+    "labels": [
+      {
+        "text": "Compartimento hematopoyético",
+        "x": 62,
+        "y": 30,
+        "w": 26,
+        "h": 30
+      },
+      {
+        "text": "Adipocitos / sinusoides",
+        "x": 8,
+        "y": 30,
+        "w": 22,
+        "h": 30
+      }
+    ]
+  },
+  "T05-Sangre/t05hematopo-p05-1.png": {
+    "title": "Médula ósea — hueso y compartimento hematopoyético (bajo aumento)",
+    "tema": "T05-Sangre",
+    "labels": [
+      {
+        "text": "Hueso / trabécula",
+        "x": 30,
+        "y": 8,
+        "w": 40,
+        "h": 22
+      },
+      {
+        "text": "Compartimento hematopoyético",
+        "x": 30,
+        "y": 50,
+        "w": 40,
+        "h": 35
+      }
+    ]
+  },
+  "T05-Sangre/t05hematopo-p05-2.png": {
+    "title": "Médula ósea — sinusoides y compartimento hematopoyético",
+    "tema": "T05-Sangre",
+    "labels": [
+      {
+        "text": "Sinusoide",
+        "x": 14,
+        "y": 16,
+        "w": 24,
+        "h": 22
+      },
+      {
+        "text": "Compartimento hematopoyético",
+        "x": 55,
+        "y": 60,
+        "w": 30,
+        "h": 28
+      }
+    ]
+  },
+  "T05-Sangre/t05hematopo-p06-1.png": {
+    "title": "Médula ósea — megacariocito junto a sinusoide",
+    "tema": "T05-Sangre",
+    "labels": [
+      {
+        "text": "Megacariocito",
+        "x": 22,
+        "y": 28,
+        "w": 22,
+        "h": 30
+      },
+      {
+        "text": "Sinusoide",
+        "x": 4,
+        "y": 24,
+        "w": 16,
+        "h": 20
+      },
+      {
+        "text": "Hematopoyesis (precursores)",
+        "x": 60,
+        "y": 12,
+        "w": 26,
+        "h": 24
+      }
+    ]
+  },
+  "T05-Sangre/t05hematopo-p21-1.png": {
+    "title": "Médula ósea — serie granulocítica (maduración del neutrófilo)",
+    "tema": "T05-Sangre",
+    "labels": [
+      {
+        "text": "Promielocíto",
+        "x": 8,
+        "y": 30,
+        "w": 18,
+        "h": 22
+      },
+      {
+        "text": "Metamielocíto",
+        "x": 36,
+        "y": 28,
+        "w": 16,
+        "h": 18
+      },
+      {
+        "text": "Metamielocíto",
+        "x": 58,
+        "y": 30,
+        "w": 15,
+        "h": 17
+      },
+      {
+        "text": "Metamielocíto eosinófilo",
+        "x": 78,
+        "y": 8,
+        "w": 18,
+        "h": 20
+      },
+      {
+        "text": "Metamielocíto",
+        "x": 10,
+        "y": 56,
+        "w": 16,
+        "h": 17
+      },
+      {
+        "text": "Neutrófilo",
+        "x": 26,
+        "y": 80,
+        "w": 15,
+        "h": 16
+      },
+      {
+        "text": "Neutrófilo",
+        "x": 50,
+        "y": 78,
+        "w": 16,
+        "h": 17
+      }
+    ]
+  },
+  "T05-Sangre/t05hematopo-p22-1.png": {
+    "title": "Médula ósea — maduración del neutrófilo (mielocíto a banda)",
+    "tema": "T05-Sangre",
+    "labels": [
+      {
+        "text": "Neutrófilo maduro",
+        "x": 14,
+        "y": 14,
+        "w": 22,
+        "h": 22
+      },
+      {
+        "text": "Metamielocíto",
+        "x": 64,
+        "y": 22,
+        "w": 20,
+        "h": 20
+      },
+      {
+        "text": "Mielocíto neutrófilo",
+        "x": 50,
+        "y": 44,
+        "w": 22,
+        "h": 22
+      },
+      {
+        "text": "Célula en banda",
+        "x": 28,
+        "y": 64,
+        "w": 24,
+        "h": 22
+      }
+    ]
+  },
+  "T05-Sangre/t05hematopo-p27-1.png": {
+    "title": "Médula ósea — megacariocito y plaquetas en formación",
+    "tema": "T05-Sangre",
+    "labels": [
+      {
+        "text": "Megacariocito (núcleo multilobulado)",
+        "x": 28,
+        "y": 28,
+        "w": 38,
+        "h": 40
+      },
+      {
+        "text": "Plaquetas",
+        "x": 72,
+        "y": 18,
+        "w": 16,
+        "h": 16
+      },
+      {
+        "text": "Plaquetas",
+        "x": 32,
+        "y": 80,
+        "w": 16,
+        "h": 14
+      }
+    ]
+  },
+  "T05-Sangre/t05hematopo-p29-2.png": {
+    "title": "Megacariocito — microscopía electrónica",
+    "tema": "T05-Sangre",
+    "labels": [
+      {
+        "text": "Megacariocito",
+        "x": 40,
+        "y": 35,
+        "w": 30,
+        "h": 35
+      }
+    ]
+  },
+  "T07-Piel/t07pellcv-p01-1.png": {
+    "title": "Piel fina — visión general (epidermis, dermis, papilas)",
+    "tema": "T07-Piel",
+    "labels": [
+      {
+        "text": "Estrato córneo",
+        "x": 8,
+        "y": 6,
+        "w": 35,
+        "h": 14
+      },
+      {
+        "text": "Epidermis",
+        "x": 60,
+        "y": 20,
+        "w": 30,
+        "h": 18
+      },
+      {
+        "text": "Papila dérmica",
+        "x": 30,
+        "y": 42,
+        "w": 22,
+        "h": 16
+      },
+      {
+        "text": "Dermis papilar",
+        "x": 6,
+        "y": 60,
+        "w": 30,
+        "h": 18
+      },
+      {
+        "text": "Dermis reticular",
+        "x": 60,
+        "y": 78,
+        "w": 32,
+        "h": 16
+      }
+    ]
+  },
+  "T07-Piel/t07pellcv-p05-1.png": {
+    "title": "Piel fina — estratos de la epidermis",
+    "tema": "T07-Piel",
+    "labels": [
+      {
+        "text": "Estrato córneo",
+        "x": 5,
+        "y": 4,
+        "w": 90,
+        "h": 14
+      },
+      {
+        "text": "Estrato granuloso",
+        "x": 5,
+        "y": 22,
+        "w": 90,
+        "h": 12
+      },
+      {
+        "text": "Estrato espinoso",
+        "x": 5,
+        "y": 38,
+        "w": 90,
+        "h": 24
+      },
+      {
+        "text": "Estrato basal",
+        "x": 5,
+        "y": 64,
+        "w": 90,
+        "h": 14
+      },
+      {
+        "text": "Dermis papilar",
+        "x": 5,
+        "y": 82,
+        "w": 90,
+        "h": 14
+      }
+    ]
+  },
+  "T07-Piel/t07pellcv-p06-1.png": {
+    "title": "Epidermis — estrato basal y melanocitos",
+    "tema": "T07-Piel",
+    "labels": [
+      {
+        "text": "Estrato córneo",
+        "x": 5,
+        "y": 4,
+        "w": 90,
+        "h": 18
+      },
+      {
+        "text": "Estrato espinoso",
+        "x": 5,
+        "y": 26,
+        "w": 90,
+        "h": 30
+      },
+      {
+        "text": "Estrato basal",
+        "x": 5,
+        "y": 60,
+        "w": 90,
+        "h": 16
+      },
+      {
+        "text": "Dermis",
+        "x": 5,
+        "y": 80,
+        "w": 90,
+        "h": 16
+      }
+    ]
+  },
+  "T07-Piel/t07pellcv-p07-2.png": {
+    "title": "Epidermis — células dendríticas (melanocitos/Langerhans)",
+    "tema": "T07-Piel",
+    "labels": [
+      {
+        "text": "Estrato córneo",
+        "x": 5,
+        "y": 5,
+        "w": 90,
+        "h": 14
+      },
+      {
+        "text": "Epidermis (estrato espinoso)",
+        "x": 6,
+        "y": 24,
+        "w": 60,
+        "h": 28
+      },
+      {
+        "text": "Célula dendrítica (melanocito/Langerhans)",
+        "x": 18,
+        "y": 32,
+        "w": 28,
+        "h": 14
+      },
+      {
+        "text": "Dermis",
+        "x": 6,
+        "y": 72,
+        "w": 88,
+        "h": 22
+      }
+    ]
+  },
+  "T07-Piel/t07pellcv-p17-2.png": {
+    "title": "Epidermis — estrato basal y unión dermoepidérmica",
+    "tema": "T07-Piel",
+    "labels": [
+      {
+        "text": "Estrato córneo",
+        "x": 5,
+        "y": 5,
+        "w": 90,
+        "h": 16
+      },
+      {
+        "text": "Estrato espinoso",
+        "x": 5,
+        "y": 25,
+        "w": 90,
+        "h": 30
+      },
+      {
+        "text": "Estrato basal",
+        "x": 5,
+        "y": 60,
+        "w": 90,
+        "h": 18
+      },
+      {
+        "text": "Dermis papilar",
+        "x": 5,
+        "y": 82,
+        "w": 90,
+        "h": 14
+      }
+    ]
+  },
+  "T07-Piel/t07pellcv-p19-1.png": {
+    "title": "Epidermis — pigmento melánico en capa basal (piel pigmentada)",
+    "tema": "T07-Piel",
+    "labels": [
+      {
+        "text": "Estrato córneo",
+        "x": 5,
+        "y": 4,
+        "w": 90,
+        "h": 16
+      },
+      {
+        "text": "Estrato espinoso",
+        "x": 5,
+        "y": 22,
+        "w": 90,
+        "h": 22
+      },
+      {
+        "text": "Melanina (estrato basal)",
+        "x": 25,
+        "y": 46,
+        "w": 50,
+        "h": 16
+      },
+      {
+        "text": "Melanocito",
+        "x": 15,
+        "y": 50,
+        "w": 16,
+        "h": 14
+      },
+      {
+        "text": "Dermis papilar",
+        "x": 5,
+        "y": 78,
+        "w": 90,
+        "h": 18
+      }
+    ]
+  },
+  "T07-Piel/t07pellcv-p20-1.png": {
+    "title": "Piel fina — epidermis y crestas interpapilares",
+    "tema": "T07-Piel",
+    "labels": [
+      {
+        "text": "Estrato córneo",
+        "x": 5,
+        "y": 8,
+        "w": 90,
+        "h": 16
+      },
+      {
+        "text": "Epidermis",
+        "x": 35,
+        "y": 30,
+        "w": 35,
+        "h": 24
+      },
+      {
+        "text": "Cresta epidérmica / papila dérmica",
+        "x": 18,
+        "y": 50,
+        "w": 30,
+        "h": 16
+      },
+      {
+        "text": "Dermis",
+        "x": 5,
+        "y": 76,
+        "w": 90,
+        "h": 20
+      }
+    ]
+  },
+  "T07-Piel/t07pellcv-p25-1.png": {
+    "title": "Epidermis — detalle de melanocitos (alto aumento)",
+    "tema": "T07-Piel",
+    "labels": [
+      {
+        "text": "Queratinocitos (estrato espinoso)",
+        "x": 55,
+        "y": 8,
+        "w": 38,
+        "h": 22
+      },
+      {
+        "text": "Melanocito (citoplasma claro)",
+        "x": 10,
+        "y": 35,
+        "w": 22,
+        "h": 18
+      },
+      {
+        "text": "Gránulos de melanina",
+        "x": 38,
+        "y": 30,
+        "w": 24,
+        "h": 16
+      },
+      {
+        "text": "Membrana basal",
+        "x": 30,
+        "y": 78,
+        "w": 40,
+        "h": 14
+      }
+    ]
+  },
+  "T07-Piel/t07pellcv-p30-1.png": {
+    "title": "Cuero cabelludo — folículos pilosos (corte longitudinal)",
+    "tema": "T07-Piel",
+    "labels": [
+      {
+        "text": "Tallo del pelo",
+        "x": 30,
+        "y": 4,
+        "w": 18,
+        "h": 14
+      },
+      {
+        "text": "Folículo piloso",
+        "x": 8,
+        "y": 30,
+        "w": 22,
+        "h": 30
+      },
+      {
+        "text": "Bulbo / raíz del pelo",
+        "x": 8,
+        "y": 70,
+        "w": 22,
+        "h": 22
+      },
+      {
+        "text": "Vaina radicular (corte transversal del folículo)",
+        "x": 62,
+        "y": 30,
+        "w": 30,
+        "h": 40
+      }
+    ]
+  },
+  "T07-Piel/t07pellcv-p42-1.png": {
+    "title": "Cuero cabelludo — glándulas sebáceas",
+    "tema": "T07-Piel",
+    "labels": [
+      {
+        "text": "Epidermis",
+        "x": 30,
+        "y": 4,
+        "w": 40,
+        "h": 12
+      },
+      {
+        "text": "Glándula sebácea",
+        "x": 30,
+        "y": 38,
+        "w": 30,
+        "h": 30
+      },
+      {
+        "text": "Folículo piloso / tallo del pelo",
+        "x": 60,
+        "y": 20,
+        "w": 20,
+        "h": 30
+      },
+      {
+        "text": "Dermis",
+        "x": 5,
+        "y": 78,
+        "w": 90,
+        "h": 18
+      }
+    ]
+  },
+  "T07-Piel/t07pellcv-p43-1.png": {
+    "title": "Glándula sudorípara apocrina — porción secretora y canal",
+    "tema": "T07-Piel",
+    "labels": [
+      {
+        "text": "Canal del folículo piloso (conducto excretor)",
+        "x": 35,
+        "y": 18,
+        "w": 30,
+        "h": 30
+      },
+      {
+        "text": "Porción secretora (luz amplia)",
+        "x": 8,
+        "y": 30,
+        "w": 25,
+        "h": 25
+      },
+      {
+        "text": "Secreción (apocrina)",
+        "x": 18,
+        "y": 55,
+        "w": 28,
+        "h": 16
+      }
+    ]
+  },
+  "T07-Piel/t07pellcv-p43-2.png": {
+    "title": "Cuero cabelludo — folículos pilosos (cortes transversales)",
+    "tema": "T07-Piel",
+    "labels": [
+      {
+        "text": "Folículo piloso (corte longitudinal)",
+        "x": 25,
+        "y": 6,
+        "w": 35,
+        "h": 20
+      },
+      {
+        "text": "Folículo piloso (corte transversal)",
+        "x": 6,
+        "y": 38,
+        "w": 35,
+        "h": 18
+      },
+      {
+        "text": "Glándula sudorípara apocrina",
+        "x": 50,
+        "y": 55,
+        "w": 35,
+        "h": 25
+      },
+      {
+        "text": "Dermis",
+        "x": 60,
+        "y": 12,
+        "w": 35,
+        "h": 20
+      }
+    ]
+  },
+  "T07-Piel/t07pellcv-p46-1.png": {
+    "title": "Hipodermis/dermis — anejos cutáneos (glándulas, nervio, adipocitos)",
+    "tema": "T07-Piel",
+    "labels": [
+      {
+        "text": "Adipocitos (hipodermis)",
+        "x": 6,
+        "y": 30,
+        "w": 22,
+        "h": 22
+      },
+      {
+        "text": "Glándula sudorípara ecrina (porción secretora)",
+        "x": 38,
+        "y": 55,
+        "w": 30,
+        "h": 25
+      },
+      {
+        "text": "Conducto excretor",
+        "x": 50,
+        "y": 38,
+        "w": 18,
+        "h": 16
+      },
+      {
+        "text": "Vaso sanguíneo",
+        "x": 5,
+        "y": 70,
+        "w": 25,
+        "h": 18
+      }
+    ]
+  },
+  "T07-Piel/t07pellcv-p48-1.png": {
+    "title": "Glándula sudorípara ecrina — porción secretora y conducto",
+    "tema": "T07-Piel",
+    "labels": [
+      {
+        "text": "Porción secretora (epitelio cúbico, luz amplia)",
+        "x": 8,
+        "y": 8,
+        "w": 35,
+        "h": 25
+      },
+      {
+        "text": "Conducto excretor (epitelio biestratificado)",
+        "x": 40,
+        "y": 50,
+        "w": 35,
+        "h": 22
+      },
+      {
+        "text": "Células mioepiteliales (basal)",
+        "x": 50,
+        "y": 30,
+        "w": 28,
+        "h": 16
+      },
+      {
+        "text": "Estroma de tejido conectivo",
+        "x": 5,
+        "y": 80,
+        "w": 40,
+        "h": 16
+      }
+    ]
+  },
+  "T07-Piel/t07pellcv-p48-2.png": {
+    "title": "Piel (tinción tricrómica) — dermis y glándulas sudoríparas",
+    "tema": "T07-Piel",
+    "labels": [
+      {
+        "text": "Epidermis (estrato córneo)",
+        "x": 35,
+        "y": 4,
+        "w": 45,
+        "h": 12
+      },
+      {
+        "text": "Dermis (colágeno, verde)",
+        "x": 8,
+        "y": 28,
+        "w": 40,
+        "h": 22
+      },
+      {
+        "text": "Conducto sudoríparo",
+        "x": 25,
+        "y": 32,
+        "w": 22,
+        "h": 16
+      },
+      {
+        "text": "Glándula sudorípara ecrina (porción secretora)",
+        "x": 45,
+        "y": 65,
+        "w": 45,
+        "h": 28
+      }
+    ]
+  },
+  "T07-Piel/t07pellcv-p52-1.png": {
+    "title": "Corpúsculo de Pacini (laminar, dermis profunda/hipodermis)",
+    "tema": "T07-Piel",
+    "labels": [
+      {
+        "text": "Corpúsculo de Pacini",
+        "x": 18,
+        "y": 18,
+        "w": 55,
+        "h": 55
+      },
+      {
+        "text": "Láminas concéntricas (células perineurales)",
+        "x": 12,
+        "y": 30,
+        "w": 28,
+        "h": 22
+      },
+      {
+        "text": "Axón aferente (centro)",
+        "x": 52,
+        "y": 38,
+        "w": 24,
+        "h": 18
+      }
+    ]
+  },
+  "T08-Endocrino/t08tiroide-p04-1.png": {
+    "title": "Tiroides — folículos y coloide (H-E)",
+    "tema": "T08-Endocrino",
+    "labels": [
+      {
+        "text": "Folículo tiroideo",
+        "x": 38,
+        "y": 42,
+        "w": 14,
+        "h": 12
+      },
+      {
+        "text": "Coloide",
+        "x": 60,
+        "y": 30,
+        "w": 12,
+        "h": 12
+      },
+      {
+        "text": "Epitelio folicular",
+        "x": 18,
+        "y": 58,
+        "w": 14,
+        "h": 10
+      }
+    ]
+  },
+  "T08-Endocrino/t08tiroide-p08-1.png": {
+    "title": "Tiroides — células C (parafoliculares)",
+    "tema": "T08-Endocrino",
+    "labels": [
+      {
+        "text": "Cèl·lules parafol·liculars (cèl·lula C)",
+        "x": 30,
+        "y": 18,
+        "w": 26,
+        "h": 12
+      },
+      {
+        "text": "Cèl·lules fol·liculars",
+        "x": 66,
+        "y": 36,
+        "w": 22,
+        "h": 10
+      },
+      {
+        "text": "Coloide",
+        "x": 12,
+        "y": 60,
+        "w": 12,
+        "h": 12
+      }
+    ]
+  },
+  "T08-Endocrino/t08tiroide-p13-1.png": {
+    "title": "Tiroides — células C parafoliculares (detalle)",
+    "tema": "T08-Endocrino",
+    "labels": [
+      {
+        "text": "Cèl·lules parafol·liculars (cèl·lula C)",
+        "x": 24,
+        "y": 20,
+        "w": 28,
+        "h": 12
+      },
+      {
+        "text": "Folículo",
+        "x": 64,
+        "y": 50,
+        "w": 14,
+        "h": 14
+      },
+      {
+        "text": "Coloide",
+        "x": 14,
+        "y": 50,
+        "w": 12,
+        "h": 12
+      }
+    ]
+  },
+  "T08-Endocrino/t08paratiro-p05-1.png": {
+    "title": "Paratiroides — cápsula y separación de tiroides",
+    "tema": "T08-Endocrino",
+    "labels": [
+      {
+        "text": "Càpsula / septe (tiroides–paratiroides)",
+        "x": 40,
+        "y": 6,
+        "w": 30,
+        "h": 12
+      },
+      {
+        "text": "Glàndula tiroide",
+        "x": 8,
+        "y": 70,
+        "w": 22,
+        "h": 12
+      },
+      {
+        "text": "Glàndula paratiroide",
+        "x": 70,
+        "y": 22,
+        "w": 22,
+        "h": 14
+      }
+    ]
+  },
+  "T08-Endocrino/t08paratiro-p06-1.png": {
+    "title": "Paratiroides — parénquima (cordones celulares)",
+    "tema": "T08-Endocrino",
+    "labels": [
+      {
+        "text": "Cèl·lules principals",
+        "x": 32,
+        "y": 40,
+        "w": 20,
+        "h": 12
+      },
+      {
+        "text": "Adipòcit",
+        "x": 60,
+        "y": 24,
+        "w": 14,
+        "h": 12
+      },
+      {
+        "text": "Tabique conjuntivo",
+        "x": 14,
+        "y": 64,
+        "w": 16,
+        "h": 10
+      }
+    ]
+  },
+  "T08-Endocrino/t08paratiro-p07-1.png": {
+    "title": "Paratiroides — células principales y oxífilas",
+    "tema": "T08-Endocrino",
+    "labels": [
+      {
+        "text": "Cèl·lules principals",
+        "x": 22,
+        "y": 16,
+        "w": 22,
+        "h": 12
+      },
+      {
+        "text": "Adipòcits",
+        "x": 46,
+        "y": 40,
+        "w": 14,
+        "h": 12
+      },
+      {
+        "text": "Cèl·lules oxífiles",
+        "x": 58,
+        "y": 70,
+        "w": 22,
+        "h": 12
+      }
+    ]
+  },
+  "T08-Endocrino/t08paratiro-p08-1.png": {
+    "title": "Paratiroides — células oxífilas vs principales",
+    "tema": "T08-Endocrino",
+    "labels": [
+      {
+        "text": "Cèl·lules oxífiles",
+        "x": 50,
+        "y": 18,
+        "w": 22,
+        "h": 12
+      },
+      {
+        "text": "Cèl·lules principals",
+        "x": 24,
+        "y": 70,
+        "w": 22,
+        "h": 12
+      }
+    ]
+  },
+  "T08-Endocrino/t08paratiro-p08-2.png": {
+    "title": "Paratiroides — principales, oxífilas y adipocitos",
+    "tema": "T08-Endocrino",
+    "labels": [
+      {
+        "text": "Septes de teixit connectiu",
+        "x": 8,
+        "y": 8,
+        "w": 22,
+        "h": 10
+      },
+      {
+        "text": "Cèl·lules principals",
+        "x": 56,
+        "y": 8,
+        "w": 22,
+        "h": 10
+      },
+      {
+        "text": "Cèl·lules oxífiles",
+        "x": 30,
+        "y": 26,
+        "w": 22,
+        "h": 10
+      },
+      {
+        "text": "Adipòcits",
+        "x": 6,
+        "y": 48,
+        "w": 16,
+        "h": 12
+      },
+      {
+        "text": "Cèl·lules oxífiles",
+        "x": 56,
+        "y": 50,
+        "w": 22,
+        "h": 12
+      }
+    ]
+  },
+  "T08-Endocrino/t08paratiro-p09-1.png": {
+    "title": "Paratiroides — oxífilas, principales y adipocitos",
+    "tema": "T08-Endocrino",
+    "labels": [
+      {
+        "text": "Cèl·lules oxífiles",
+        "x": 20,
+        "y": 18,
+        "w": 22,
+        "h": 12
+      },
+      {
+        "text": "Adipòcit",
+        "x": 58,
+        "y": 50,
+        "w": 14,
+        "h": 12
+      },
+      {
+        "text": "Cèl·lules principals",
+        "x": 14,
+        "y": 72,
+        "w": 22,
+        "h": 12
+      }
+    ]
+  },
+  "T08-Endocrino/t08paratiro-p10-1.png": {
+    "title": "Paratiroides — oxífilas, principales y adipocitos",
+    "tema": "T08-Endocrino",
+    "labels": [
+      {
+        "text": "Cèl·lules oxífiles",
+        "x": 18,
+        "y": 16,
+        "w": 22,
+        "h": 12
+      },
+      {
+        "text": "Adipòcit",
+        "x": 60,
+        "y": 48,
+        "w": 14,
+        "h": 12
+      },
+      {
+        "text": "Cèl·lules principals",
+        "x": 16,
+        "y": 72,
+        "w": 22,
+        "h": 12
+      }
+    ]
+  },
+  "T08-Endocrino/t08paratiro-p13-1.png": {
+    "title": "Paratiroides — células principales y adipocito",
+    "tema": "T08-Endocrino",
+    "labels": [
+      {
+        "text": "Adipòcit",
+        "x": 64,
+        "y": 16,
+        "w": 16,
+        "h": 12
+      },
+      {
+        "text": "Cèl·lules principals",
+        "x": 34,
+        "y": 64,
+        "w": 22,
+        "h": 12
+      }
+    ]
+  },
+  "T08-Endocrino/t08adrenals-p11-2.png": {
+    "title": "Suprarrenal — corteza, zona reticular",
+    "tema": "T08-Endocrino",
+    "labels": [
+      {
+        "text": "Zona reticular",
+        "x": 44,
+        "y": 36,
+        "w": 18,
+        "h": 12
+      },
+      {
+        "text": "Cordones celulares anastomosados",
+        "x": 18,
+        "y": 64,
+        "w": 24,
+        "h": 12
+      }
+    ]
+  },
+  "T08-Endocrino/t08adrenals-p01-1.png": {
+    "title": "Suprarrenal — corteza (células espongiocíticas)",
+    "tema": "T08-Endocrino",
+    "labels": [
+      {
+        "text": "Vas sanguini (sinusoide)",
+        "x": 36,
+        "y": 32,
+        "w": 18,
+        "h": 12
+      },
+      {
+        "text": "Cèl·lules espongiocítiques (zona fascicular)",
+        "x": 16,
+        "y": 60,
+        "w": 26,
+        "h": 14
+      }
+    ]
+  },
+  "T08-Endocrino/t08adrenals-p02-1.png": {
+    "title": "Suprarrenal — médula (células cromafines)",
+    "tema": "T08-Endocrino",
+    "labels": [
+      {
+        "text": "Cèl·lules cromafines (simpàtiques)",
+        "x": 30,
+        "y": 56,
+        "w": 30,
+        "h": 12
+      },
+      {
+        "text": "Médula suprarrenal",
+        "x": 56,
+        "y": 26,
+        "w": 22,
+        "h": 12
+      }
+    ]
+  },
+  "T08-Endocrino/t08hipofisi-p10-1.png": {
+    "title": "Hipófisis — pars distalis (cromófilas y cromófobas)",
+    "tema": "T08-Endocrino",
+    "labels": [
+      {
+        "text": "Cèl·lules basòfiles (cromòfiles)",
+        "x": 30,
+        "y": 12,
+        "w": 26,
+        "h": 12
+      },
+      {
+        "text": "Cèl·lules acidòfiles (cromòfiles)",
+        "x": 30,
+        "y": 38,
+        "w": 26,
+        "h": 12
+      },
+      {
+        "text": "Cèl·lules cromòfobes",
+        "x": 40,
+        "y": 60,
+        "w": 22,
+        "h": 12
+      },
+      {
+        "text": "Cèl·lules cromòfobes",
+        "x": 14,
+        "y": 82,
+        "w": 22,
+        "h": 12
+      }
+    ]
+  },
+  "T08-Endocrino/t08hipofisi-p11-1.png": {
+    "title": "Hipófisis — pars distalis (acidófilas, basófilas, cromófobas)",
+    "tema": "T08-Endocrino",
+    "labels": [
+      {
+        "text": "Cèl·lules acidòfiles",
+        "x": 56,
+        "y": 18,
+        "w": 24,
+        "h": 12
+      },
+      {
+        "text": "Cèl·lules cromòfobes",
+        "x": 36,
+        "y": 44,
+        "w": 24,
+        "h": 12
+      },
+      {
+        "text": "Cèl·lules basòfiles",
+        "x": 14,
+        "y": 72,
+        "w": 24,
+        "h": 12
+      }
+    ]
+  },
+  "T08-Endocrino/t08hipofisi-p17-1.png": {
+    "title": "Hipófisis — pars distalis (acidófilas, basófilas, cromófobas)",
+    "tema": "T08-Endocrino",
+    "labels": [
+      {
+        "text": "Cèl·lules acidòfiles",
+        "x": 42,
+        "y": 14,
+        "w": 24,
+        "h": 12
+      },
+      {
+        "text": "Cèl·lules cromòfobes",
+        "x": 56,
+        "y": 40,
+        "w": 24,
+        "h": 12
+      },
+      {
+        "text": "Cèl·lules basòfiles",
+        "x": 16,
+        "y": 66,
+        "w": 24,
+        "h": 12
+      }
+    ]
+  },
+  "T08-Endocrino/t08hipofisi-p20-1.png": {
+    "title": "Hipófisis — pars intermedia (folículos con coloide)",
+    "tema": "T08-Endocrino",
+    "labels": [
+      {
+        "text": "Cèl·lules fol·liculars (pars intermedia)",
+        "x": 36,
+        "y": 30,
+        "w": 28,
+        "h": 12
+      },
+      {
+        "text": "Material col·loide",
+        "x": 56,
+        "y": 64,
+        "w": 20,
+        "h": 12
+      }
+    ]
+  },
+  "T08-Endocrino/t08hipofisi-p24-1.png": {
+    "title": "Hipófisis — adeno vs neurohipófisis (transición)",
+    "tema": "T08-Endocrino",
+    "labels": [
+      {
+        "text": "Pars distalis (adenohipòfisi)",
+        "x": 4,
+        "y": 8,
+        "w": 26,
+        "h": 12
+      },
+      {
+        "text": "Pars intermèdia",
+        "x": 32,
+        "y": 36,
+        "w": 22,
+        "h": 12
+      },
+      {
+        "text": "Neurohipòfisi",
+        "x": 50,
+        "y": 70,
+        "w": 22,
+        "h": 12
+      }
+    ]
+  },
+  "T08-Endocrino/t08hipofisi-p24-2.png": {
+    "title": "Hipófisis — adenohipófisis vs neurohipófisis (panorámica)",
+    "tema": "T08-Endocrino",
+    "labels": [
+      {
+        "text": "Pars intermèdia (quists)",
+        "x": 14,
+        "y": 24,
+        "w": 22,
+        "h": 14
+      },
+      {
+        "text": "Posterior pituitary (pars nervosa)",
+        "x": 6,
+        "y": 60,
+        "w": 26,
+        "h": 12
+      },
+      {
+        "text": "Anterior pituitary (pars distalis)",
+        "x": 60,
+        "y": 60,
+        "w": 26,
+        "h": 12
+      }
+    ]
+  },
+  "T08-Endocrino/t08pinealc-p06-1.png": {
+    "title": "Glándula pineal — pinealocitos y septos",
+    "tema": "T08-Endocrino",
+    "labels": [
+      {
+        "text": "Pinealòcits",
+        "x": 64,
+        "y": 14,
+        "w": 22,
+        "h": 12
+      },
+      {
+        "text": "Septe conjuntiu",
+        "x": 36,
+        "y": 44,
+        "w": 18,
+        "h": 12
+      }
+    ]
+  },
+  "T08-Endocrino/t08pinealc-p08-2.png": {
+    "title": "Glándula pineal — pinealocitos y vaso (detalle)",
+    "tema": "T08-Endocrino",
+    "labels": [
+      {
+        "text": "Pinealòcits",
+        "x": 22,
+        "y": 26,
+        "w": 22,
+        "h": 14
+      },
+      {
+        "text": "Vas / septe conjuntiu",
+        "x": 46,
+        "y": 50,
+        "w": 20,
+        "h": 14
+      }
+    ]
+  },
+  "T08-Endocrino/t08pancrees-p02-2.png": {
+    "title": "Páncreas endocrino — islote de Langerhans (panorámica)",
+    "tema": "T08-Endocrino",
+    "labels": [
+      {
+        "text": "Illot de Langerhans",
+        "x": 50,
+        "y": 10,
+        "w": 24,
+        "h": 12
+      },
+      {
+        "text": "Illot de Langerhans",
+        "x": 22,
+        "y": 44,
+        "w": 24,
+        "h": 12
+      },
+      {
+        "text": "Acinos exocrinos",
+        "x": 70,
+        "y": 66,
+        "w": 20,
+        "h": 12
+      }
+    ]
+  },
+  "T08-Endocrino/t08pancrees-p04-1.png": {
+    "title": "Páncreas endocrino — islotes de Langerhans",
+    "tema": "T08-Endocrino",
+    "labels": [
+      {
+        "text": "Illot de Langerhans",
+        "x": 56,
+        "y": 12,
+        "w": 24,
+        "h": 12
+      },
+      {
+        "text": "Illot de Langerhans",
+        "x": 22,
+        "y": 46,
+        "w": 24,
+        "h": 12
+      },
+      {
+        "text": "Acinos exocrinos",
+        "x": 66,
+        "y": 70,
+        "w": 20,
+        "h": 12
+      }
+    ]
+  },
+  "T08-Endocrino/t08pancrees-p05-1.png": {
+    "title": "Páncreas endocrino — islote de Langerhans (detalle)",
+    "tema": "T08-Endocrino",
+    "labels": [
+      {
+        "text": "Illot de Langerhans",
+        "x": 36,
+        "y": 36,
+        "w": 24,
+        "h": 16
+      },
+      {
+        "text": "Vas sanguini (capil·lar)",
+        "x": 60,
+        "y": 22,
+        "w": 20,
+        "h": 12
+      },
+      {
+        "text": "Acins exocrins",
+        "x": 14,
+        "y": 70,
+        "w": 18,
+        "h": 12
+      }
+    ]
+  },
+  "T08-Endocrino/t08pancrees-p05-2.png": {
+    "title": "Páncreas endocrino — islote con capilares",
+    "tema": "T08-Endocrino",
+    "labels": [
+      {
+        "text": "Illot de Langerhans",
+        "x": 30,
+        "y": 30,
+        "w": 26,
+        "h": 16
+      },
+      {
+        "text": "Vasos sanguinis (capil·lars)",
+        "x": 56,
+        "y": 22,
+        "w": 22,
+        "h": 12
+      },
+      {
+        "text": "Acins exocrins",
+        "x": 70,
+        "y": 64,
+        "w": 18,
+        "h": 12
+      }
+    ]
+  },
+  "T08-Endocrino/t08pancrees-p06-1.png": {
+    "title": "Páncreas endocrino — islote (inmunohistoquímica)",
+    "tema": "T08-Endocrino",
+    "labels": [
+      {
+        "text": "Illot de Langerhans (cèl·lules positives)",
+        "x": 36,
+        "y": 36,
+        "w": 30,
+        "h": 20
+      }
+    ]
+  },
+  "T09-Urinario/t09urinari-p06-1.png": {
+    "title": "Riñón — médula/papila renal (conductos de Bellini y cáliz)",
+    "tema": "T09-Urinario",
+    "labels": [
+      {
+        "text": "Conductos de Bellini (papila)",
+        "x": 38,
+        "y": 30,
+        "w": 26,
+        "h": 16
+      },
+      {
+        "text": "Cáliz renal menor (PCS)",
+        "x": 62,
+        "y": 55,
+        "w": 14,
+        "h": 12
+      },
+      {
+        "text": "Epitelio de revestimiento (urotelio del cáliz)",
+        "x": 4,
+        "y": 38,
+        "w": 14,
+        "h": 14
+      },
+      {
+        "text": "Submucosa / pared (SM)",
+        "x": 8,
+        "y": 12,
+        "w": 12,
+        "h": 12
+      },
+      {
+        "text": "Urotelio (U)",
+        "x": 28,
+        "y": 84,
+        "w": 12,
+        "h": 12
+      }
+    ]
+  },
+  "T09-Urinario/t09urinari-p07-1.png": {
+    "title": "Uréter — corte transversal (luz estrellada, urotelio, muscular)",
+    "tema": "T09-Urinario",
+    "labels": [
+      {
+        "text": "Luz estrellada del uréter",
+        "x": 40,
+        "y": 40,
+        "w": 22,
+        "h": 22
+      },
+      {
+        "text": "Urotelio (epitelio de transición)",
+        "x": 42,
+        "y": 22,
+        "w": 24,
+        "h": 14
+      },
+      {
+        "text": "Lámina propia (LP)",
+        "x": 78,
+        "y": 70,
+        "w": 16,
+        "h": 14
+      },
+      {
+        "text": "Capa muscular",
+        "x": 8,
+        "y": 70,
+        "w": 18,
+        "h": 16
+      }
+    ]
+  },
+  "T09-Urinario/t09urinari-p08-1.png": {
+    "title": "Uréter — corte transversal (luz estrellada, capas musculares)",
+    "tema": "T09-Urinario",
+    "labels": [
+      {
+        "text": "Luz estrellada del uréter",
+        "x": 38,
+        "y": 38,
+        "w": 24,
+        "h": 24
+      },
+      {
+        "text": "Urotelio (epitelio de transición)",
+        "x": 42,
+        "y": 28,
+        "w": 20,
+        "h": 14
+      },
+      {
+        "text": "Capa muscular (M)",
+        "x": 48,
+        "y": 8,
+        "w": 14,
+        "h": 12
+      },
+      {
+        "text": "Capa muscular (M)",
+        "x": 50,
+        "y": 78,
+        "w": 14,
+        "h": 12
+      }
+    ]
+  },
+  "T09-Urinario/t09urinari-p09-1.png": {
+    "title": "Vías urinarias — pared (mucosa con urotelio y capas musculares)",
+    "tema": "T09-Urinario",
+    "labels": [
+      {
+        "text": "Urotelio / mucosa (M)",
+        "x": 78,
+        "y": 22,
+        "w": 18,
+        "h": 16
+      },
+      {
+        "text": "Lámina propia (LP)",
+        "x": 70,
+        "y": 50,
+        "w": 16,
+        "h": 14
+      },
+      {
+        "text": "Submucosa (S)",
+        "x": 72,
+        "y": 36,
+        "w": 14,
+        "h": 12
+      },
+      {
+        "text": "Capas musculares (1, 2, 3)",
+        "x": 14,
+        "y": 50,
+        "w": 40,
+        "h": 16
+      }
+    ]
+  },
+  "T09-Urinario/t09urinari-p13-2.png": {
+    "title": "Corpúsculo renal (glomérulo, espacio de Bowman, arteriola aferente)",
+    "tema": "T09-Urinario",
+    "labels": [
+      {
+        "text": "Glomérulo (ovillo capilar) (G)",
+        "x": 38,
+        "y": 40,
+        "w": 26,
+        "h": 26
+      },
+      {
+        "text": "Espacio urinario / de Bowman (EB)",
+        "x": 38,
+        "y": 14,
+        "w": 24,
+        "h": 14
+      },
+      {
+        "text": "Arteriola aferente (AA)",
+        "x": 70,
+        "y": 68,
+        "w": 18,
+        "h": 14
+      },
+      {
+        "text": "Cápsula de Bowman (hoja parietal)",
+        "x": 14,
+        "y": 44,
+        "w": 16,
+        "h": 16
+      }
+    ]
+  },
+  "T09-Urinario/t09urinari-p15-2.png": {
+    "title": "Corpúsculo renal — polo vascular (arteriolas aferente y eferente)",
+    "tema": "T09-Urinario",
+    "labels": [
+      {
+        "text": "Glomérulo (G)",
+        "x": 46,
+        "y": 50,
+        "w": 22,
+        "h": 20
+      },
+      {
+        "text": "Espacio de Bowman (BS)",
+        "x": 66,
+        "y": 62,
+        "w": 18,
+        "h": 14
+      },
+      {
+        "text": "Arteriola aferente (AA)",
+        "x": 36,
+        "y": 80,
+        "w": 18,
+        "h": 14
+      },
+      {
+        "text": "Arteriola eferente (EA)",
+        "x": 18,
+        "y": 56,
+        "w": 18,
+        "h": 14
+      },
+      {
+        "text": "Túbulos renales (RT)",
+        "x": 40,
+        "y": 6,
+        "w": 18,
+        "h": 12
+      }
+    ]
+  },
+  "T09-Urinario/t09urinari-p16-1.png": {
+    "title": "Glándulas asociadas a vía urinaria (glándulas mucosas)",
+    "tema": "T09-Urinario",
+    "labels": [
+      {
+        "text": "Glándula (acino mucoso)",
+        "x": 74,
+        "y": 22,
+        "w": 22,
+        "h": 16
+      },
+      {
+        "text": "Glándula (acino mucoso)",
+        "x": 74,
+        "y": 60,
+        "w": 22,
+        "h": 16
+      },
+      {
+        "text": "Estroma de tejido conectivo",
+        "x": 20,
+        "y": 40,
+        "w": 24,
+        "h": 18
+      }
+    ]
+  },
+  "T09-Urinario/t09urinari-p16-2.png": {
+    "title": "Uretra — corte longitudinal (luz, epitelio, pared conjuntiva)",
+    "tema": "T09-Urinario",
+    "labels": [
+      {
+        "text": "Luz de la uretra",
+        "x": 42,
+        "y": 42,
+        "w": 30,
+        "h": 16
+      },
+      {
+        "text": "Epitelio de revestimiento",
+        "x": 40,
+        "y": 30,
+        "w": 26,
+        "h": 12
+      },
+      {
+        "text": "Lámina propia / pared conjuntiva",
+        "x": 12,
+        "y": 14,
+        "w": 24,
+        "h": 16
+      },
+      {
+        "text": "Capa muscular",
+        "x": 12,
+        "y": 70,
+        "w": 22,
+        "h": 16
+      }
+    ]
+  },
+  "T09-Urinario/t09urinari-p35-1.png": {
+    "title": "Riñón — médula (túbulos, vasos rectos, conducto colector)",
+    "tema": "T09-Urinario",
+    "labels": [
+      {
+        "text": "Conducto colector (CC)",
+        "x": 24,
+        "y": 70,
+        "w": 20,
+        "h": 16
+      },
+      {
+        "text": "Porción ascendente asa de Henle (PAAH)",
+        "x": 58,
+        "y": 18,
+        "w": 20,
+        "h": 14
+      },
+      {
+        "text": "Porción descendente asa de Henle (SPAH)",
+        "x": 30,
+        "y": 48,
+        "w": 20,
+        "h": 14
+      },
+      {
+        "text": "Vasos rectos (VR)",
+        "x": 70,
+        "y": 40,
+        "w": 16,
+        "h": 12
+      }
+    ]
+  },
+  "T09-Urinario/t09urinari-p36-1.png": {
+    "title": "Riñón — médula (asa de Henle, túbulos, conducto colector)",
+    "tema": "T09-Urinario",
+    "labels": [
+      {
+        "text": "Conducto colector (CC)",
+        "x": 36,
+        "y": 74,
+        "w": 24,
+        "h": 16
+      },
+      {
+        "text": "Asa de Henle (AH, segmento delgado)",
+        "x": 60,
+        "y": 30,
+        "w": 16,
+        "h": 14
+      },
+      {
+        "text": "Túbulo proximal (TP)",
+        "x": 14,
+        "y": 16,
+        "w": 16,
+        "h": 14
+      },
+      {
+        "text": "Vasos rectos (VR)",
+        "x": 8,
+        "y": 36,
+        "w": 14,
+        "h": 12
+      }
+    ]
+  },
+  "T09-Urinario/t09urinari-p39-1.png": {
+    "title": "Aparato yuxtaglomerular (mácula densa y corpúsculo renal)",
+    "tema": "T09-Urinario",
+    "labels": [
+      {
+        "text": "Mácula densa",
+        "x": 40,
+        "y": 12,
+        "w": 30,
+        "h": 14
+      },
+      {
+        "text": "Glomérulo (G)",
+        "x": 38,
+        "y": 38,
+        "w": 24,
+        "h": 22
+      },
+      {
+        "text": "Túbulo contorneado proximal (TCP)",
+        "x": 26,
+        "y": 80,
+        "w": 22,
+        "h": 14
+      },
+      {
+        "text": "Espacio de Bowman",
+        "x": 64,
+        "y": 46,
+        "w": 16,
+        "h": 14
+      }
+    ]
+  },
+  "T09-Urinario/t09urinari-p40-1.png": {
+    "title": "Túbulo contorneado distal — detalle (luz amplia, núcleos hacia la luz)",
+    "tema": "T09-Urinario",
+    "labels": [
+      {
+        "text": "Luz del túbulo (TCD)",
+        "x": 42,
+        "y": 44,
+        "w": 24,
+        "h": 20
+      },
+      {
+        "text": "Epitelio cúbico simple (núcleos hacia la luz)",
+        "x": 30,
+        "y": 64,
+        "w": 26,
+        "h": 16
+      },
+      {
+        "text": "Borde luminal sin ribete en cepillo",
+        "x": 60,
+        "y": 28,
+        "w": 22,
+        "h": 14
+      }
+    ]
+  },
+  "T09-Urinario/t09urinari-p43-1.png": {
+    "title": "Riñón — corteza (túbulos contorneados proximales en corte)",
+    "tema": "T09-Urinario",
+    "labels": [
+      {
+        "text": "Túbulo contorneado proximal (TC)",
+        "x": 40,
+        "y": 32,
+        "w": 22,
+        "h": 18
+      },
+      {
+        "text": "Túbulo contorneado proximal (TC)",
+        "x": 20,
+        "y": 70,
+        "w": 22,
+        "h": 18
+      },
+      {
+        "text": "Luz tubular estrecha",
+        "x": 46,
+        "y": 42,
+        "w": 12,
+        "h": 10
+      }
+    ]
+  },
+  "T09-Urinario/t09urinari-p43-2.png": {
+    "title": "Riñón — médula (túbulos colectores en corte longitudinal)",
+    "tema": "T09-Urinario",
+    "labels": [
+      {
+        "text": "Túbulo colector (TC)",
+        "x": 50,
+        "y": 24,
+        "w": 24,
+        "h": 18
+      },
+      {
+        "text": "Túbulo colector (TC)",
+        "x": 16,
+        "y": 50,
+        "w": 22,
+        "h": 16
+      },
+      {
+        "text": "Túbulo colector (TC)",
+        "x": 36,
+        "y": 76,
+        "w": 22,
+        "h": 16
+      }
+    ]
+  },
+  "T09-Urinario/t09urinari-p46-2.png": {
+    "title": "Aparato yuxtaglomerular (mácula densa, arteriola aferente, glomérulo)",
+    "tema": "T09-Urinario",
+    "labels": [
+      {
+        "text": "Mácula densa (MD)",
+        "x": 34,
+        "y": 20,
+        "w": 16,
+        "h": 12
+      },
+      {
+        "text": "Túbulo contorneado distal (DCT)",
+        "x": 18,
+        "y": 16,
+        "w": 16,
+        "h": 12
+      },
+      {
+        "text": "Arteriola aferente (AA)",
+        "x": 40,
+        "y": 36,
+        "w": 16,
+        "h": 12
+      },
+      {
+        "text": "Glomérulo (ovillo capilar)",
+        "x": 48,
+        "y": 56,
+        "w": 26,
+        "h": 24
+      }
+    ]
+  },
+  "T09-Urinario/t09urinari-p49-1.png": {
+    "title": "Riñón — médula (vasos rectos y túbulos en corte transversal)",
+    "tema": "T09-Urinario",
+    "labels": [
+      {
+        "text": "Vaso recto (VR)",
+        "x": 56,
+        "y": 18,
+        "w": 18,
+        "h": 14
+      },
+      {
+        "text": "Vaso recto (VR)",
+        "x": 38,
+        "y": 44,
+        "w": 16,
+        "h": 14
+      },
+      {
+        "text": "Túbulos medulares",
+        "x": 16,
+        "y": 64,
+        "w": 20,
+        "h": 16
+      }
+    ]
+  },
+  "T09-Urinario/t09urinari-p50-1.png": {
+    "title": "Riñón — médula (vasos rectos entre túbulos)",
+    "tema": "T09-Urinario",
+    "labels": [
+      {
+        "text": "Vaso recto (VR)",
+        "x": 44,
+        "y": 18,
+        "w": 18,
+        "h": 14
+      },
+      {
+        "text": "Vaso recto (VR)",
+        "x": 30,
+        "y": 50,
+        "w": 18,
+        "h": 14
+      },
+      {
+        "text": "Vaso recto (VR)",
+        "x": 56,
+        "y": 58,
+        "w": 18,
+        "h": 14
+      }
+    ]
+  },
+  "T10-ReproMasc/t10sreprom-p01-1.png": {
+    "title": "Testículo — túbulo seminífero",
+    "tema": "T10-ReproMasc",
+    "labels": [
+      {
+        "text": "Luz del túbulo seminífero",
+        "x": 40,
+        "y": 38,
+        "w": 18,
+        "h": 14
+      },
+      {
+        "text": "Epitelio seminífero (espermatogonias / espermátides)",
+        "x": 18,
+        "y": 12,
+        "w": 30,
+        "h": 14
+      },
+      {
+        "text": "Tejido intersticial (células de Leydig)",
+        "x": 4,
+        "y": 60,
+        "w": 22,
+        "h": 14
+      },
+      {
+        "text": "Túnica propia / membrana basal",
+        "x": 60,
+        "y": 70,
+        "w": 24,
+        "h": 12
+      }
+    ]
+  },
+  "T10-ReproMasc/t10sreprom-p04-1.png": {
+    "title": "Epidídimo / conducto eferente — corte transversal",
+    "tema": "T10-ReproMasc",
+    "labels": [
+      {
+        "text": "Luz del conducto (C)",
+        "x": 42,
+        "y": 45,
+        "w": 18,
+        "h": 16
+      },
+      {
+        "text": "Epitelio cilíndrico con estereocilios",
+        "x": 30,
+        "y": 20,
+        "w": 26,
+        "h": 14
+      },
+      {
+        "text": "Capa muscular lisa (M)",
+        "x": 6,
+        "y": 12,
+        "w": 16,
+        "h": 14
+      },
+      {
+        "text": "Capa muscular lisa (M)",
+        "x": 70,
+        "y": 70,
+        "w": 16,
+        "h": 14
+      }
+    ]
+  },
+  "T10-ReproMasc/t10sreprom-p04-2.png": {
+    "title": "Epidídimo — conducto epididimario (cortes)",
+    "tema": "T10-ReproMasc",
+    "labels": [
+      {
+        "text": "Luz con espermatozoides",
+        "x": 50,
+        "y": 50,
+        "w": 18,
+        "h": 14
+      },
+      {
+        "text": "Epitelio cilíndrico pseudoestratificado",
+        "x": 20,
+        "y": 25,
+        "w": 26,
+        "h": 14
+      },
+      {
+        "text": "Estereocilios",
+        "x": 35,
+        "y": 38,
+        "w": 18,
+        "h": 12
+      },
+      {
+        "text": "Estroma de tejido conectivo",
+        "x": 70,
+        "y": 75,
+        "w": 22,
+        "h": 12
+      }
+    ]
+  },
+  "T10-ReproMasc/t10sreprom-p05-1.png": {
+    "title": "Epidídimo — epitelio (células principales y basales)",
+    "tema": "T10-ReproMasc",
+    "labels": [
+      {
+        "text": "Células principales (P)",
+        "x": 12,
+        "y": 35,
+        "w": 24,
+        "h": 12
+      },
+      {
+        "text": "Células basales (B)",
+        "x": 8,
+        "y": 70,
+        "w": 22,
+        "h": 12
+      },
+      {
+        "text": "Estereocilios (E)",
+        "x": 60,
+        "y": 48,
+        "w": 18,
+        "h": 12
+      },
+      {
+        "text": "Espermatozoides en la luz (S)",
+        "x": 55,
+        "y": 30,
+        "w": 22,
+        "h": 12
+      }
+    ]
+  },
+  "T10-ReproMasc/t10sreprom-p05-2.png": {
+    "title": "Epidídimo — conducto epididimario (panorámica)",
+    "tema": "T10-ReproMasc",
+    "labels": [
+      {
+        "text": "Cortes del conducto epididimario",
+        "x": 30,
+        "y": 25,
+        "w": 28,
+        "h": 14
+      },
+      {
+        "text": "Epitelio cilíndrico pseudoestratificado",
+        "x": 12,
+        "y": 50,
+        "w": 26,
+        "h": 12
+      },
+      {
+        "text": "Luz con espermatozoides",
+        "x": 55,
+        "y": 55,
+        "w": 18,
+        "h": 12
+      },
+      {
+        "text": "Estroma de tejido conectivo",
+        "x": 60,
+        "y": 78,
+        "w": 22,
+        "h": 12
+      }
+    ]
+  },
+  "T10-ReproMasc/t10sreprom-p06-1.png": {
+    "title": "Epidídimo — detalle del epitelio con estereocilios",
+    "tema": "T10-ReproMasc",
+    "labels": [
+      {
+        "text": "Estereocilios (luz)",
+        "x": 20,
+        "y": 6,
+        "w": 50,
+        "h": 16
+      },
+      {
+        "text": "Células principales (cilíndricas)",
+        "x": 15,
+        "y": 35,
+        "w": 28,
+        "h": 16
+      },
+      {
+        "text": "Núcleos basales",
+        "x": 30,
+        "y": 55,
+        "w": 26,
+        "h": 14
+      },
+      {
+        "text": "Membrana basal / músculo liso",
+        "x": 25,
+        "y": 82,
+        "w": 30,
+        "h": 12
+      }
+    ]
+  },
+  "T10-ReproMasc/t10sreprom-p07-1.png": {
+    "title": "Conducto deferente — corte transversal",
+    "tema": "T10-ReproMasc",
+    "labels": [
+      {
+        "text": "Luz estrellada",
+        "x": 40,
+        "y": 45,
+        "w": 18,
+        "h": 16
+      },
+      {
+        "text": "Mucosa con pliegues (epitelio + lámina propia)",
+        "x": 35,
+        "y": 30,
+        "w": 26,
+        "h": 12
+      },
+      {
+        "text": "Capa muscular gruesa (ML)",
+        "x": 38,
+        "y": 12,
+        "w": 16,
+        "h": 12
+      },
+      {
+        "text": "Adventicia",
+        "x": 6,
+        "y": 75,
+        "w": 20,
+        "h": 12
+      }
+    ]
+  },
+  "T10-ReproMasc/t10sreprom-p09-2.png": {
+    "title": "Conducto deferente / epidídimo — músculo liso",
+    "tema": "T10-ReproMasc",
+    "labels": [
+      {
+        "text": "Capa muscular lisa (ML)",
+        "x": 60,
+        "y": 22,
+        "w": 18,
+        "h": 14
+      },
+      {
+        "text": "Capa muscular lisa (ML)",
+        "x": 6,
+        "y": 48,
+        "w": 18,
+        "h": 14
+      },
+      {
+        "text": "Mucosa con pliegues epiteliales",
+        "x": 30,
+        "y": 55,
+        "w": 26,
+        "h": 14
+      },
+      {
+        "text": "Luz del conducto",
+        "x": 45,
+        "y": 35,
+        "w": 18,
+        "h": 12
+      }
+    ]
+  },
+  "T10-ReproMasc/t10sreprom-p12-1.png": {
+    "title": "Testículo — túbulos seminíferos y septos",
+    "tema": "T10-ReproMasc",
+    "labels": [
+      {
+        "text": "Septos de tejido conectivo",
+        "x": 45,
+        "y": 12,
+        "w": 28,
+        "h": 12
+      },
+      {
+        "text": "Túbulos seminíferos",
+        "x": 18,
+        "y": 50,
+        "w": 24,
+        "h": 16
+      },
+      {
+        "text": "Tejido intersticial",
+        "x": 70,
+        "y": 60,
+        "w": 22,
+        "h": 14
+      }
+    ]
+  },
+  "T10-ReproMasc/t10sreprom-p20-2.png": {
+    "title": "Próstata — uretra prostática",
+    "tema": "T10-ReproMasc",
+    "labels": [
+      {
+        "text": "Uretra prostática (U)",
+        "x": 55,
+        "y": 30,
+        "w": 22,
+        "h": 16
+      },
+      {
+        "text": "Glándulas prostáticas (acinos)",
+        "x": 25,
+        "y": 55,
+        "w": 26,
+        "h": 16
+      },
+      {
+        "text": "Estroma fibromuscular",
+        "x": 8,
+        "y": 78,
+        "w": 24,
+        "h": 12
+      },
+      {
+        "text": "Cápsula",
+        "x": 5,
+        "y": 35,
+        "w": 16,
+        "h": 12
+      }
+    ]
+  },
+  "T10-ReproMasc/t10sreprom-p21-1.png": {
+    "title": "Vesícula seminal — mucosa plegada",
+    "tema": "T10-ReproMasc",
+    "labels": [
+      {
+        "text": "Pliegues de la mucosa (S)",
+        "x": 70,
+        "y": 25,
+        "w": 18,
+        "h": 14
+      },
+      {
+        "text": "Pliegues de la mucosa (S)",
+        "x": 42,
+        "y": 60,
+        "w": 16,
+        "h": 14
+      },
+      {
+        "text": "Epitelio cilíndrico pseudoestratificado",
+        "x": 12,
+        "y": 40,
+        "w": 26,
+        "h": 14
+      },
+      {
+        "text": "Cavidad / luz alveolar (HA)",
+        "x": 4,
+        "y": 48,
+        "w": 18,
+        "h": 14
+      }
+    ]
+  },
+  "T10-ReproMasc/t10sreprom-p34-2.png": {
+    "title": "Testículo — células de Leydig intersticiales",
+    "tema": "T10-ReproMasc",
+    "labels": [
+      {
+        "text": "Células de Leydig (intersticiales)",
+        "x": 28,
+        "y": 55,
+        "w": 30,
+        "h": 14
+      },
+      {
+        "text": "Citoplasma eosinófilo abundante",
+        "x": 35,
+        "y": 35,
+        "w": 26,
+        "h": 12
+      },
+      {
+        "text": "Capilar intersticial",
+        "x": 60,
+        "y": 70,
+        "w": 20,
+        "h": 12
+      },
+      {
+        "text": "Pared del túbulo seminífero",
+        "x": 6,
+        "y": 18,
+        "w": 22,
+        "h": 12
+      }
+    ]
+  },
+  "T11-ReproFem/t11sreprof-p04-1.png": {
+    "title": "Trompa de Falopio — pliegues mucosos",
+    "tema": "T11-ReproFem",
+    "labels": [
+      {
+        "text": "Pliegue mucoso (lámina propia)",
+        "x": 8,
+        "y": 50,
+        "w": 22,
+        "h": 14
+      },
+      {
+        "text": "Epitelio cilíndrico simple",
+        "x": 48,
+        "y": 30,
+        "w": 24,
+        "h": 14
+      },
+      {
+        "text": "Luz de la trompa",
+        "x": 30,
+        "y": 70,
+        "w": 22,
+        "h": 14
+      }
+    ]
+  },
+  "T11-ReproFem/t11sreprof-p05-1.png": {
+    "title": "Trompa de Falopio — epitelio (ciliadas y secretoras)",
+    "tema": "T11-ReproFem",
+    "labels": [
+      {
+        "text": "Células ciliadas",
+        "x": 60,
+        "y": 4,
+        "w": 26,
+        "h": 12
+      },
+      {
+        "text": "Células secretoras (no ciliadas)",
+        "x": 2,
+        "y": 4,
+        "w": 26,
+        "h": 12
+      },
+      {
+        "text": "Lámina propia",
+        "x": 38,
+        "y": 55,
+        "w": 24,
+        "h": 14
+      }
+    ]
+  },
+  "T11-ReproFem/t11sreprof-p09-1.png": {
+    "title": "Útero — endometrio y miometrio",
+    "tema": "T11-ReproFem",
+    "labels": [
+      {
+        "text": "Endometrio",
+        "x": 62,
+        "y": 18,
+        "w": 22,
+        "h": 14
+      },
+      {
+        "text": "Miometrio",
+        "x": 60,
+        "y": 55,
+        "w": 22,
+        "h": 14
+      },
+      {
+        "text": "Glándulas endometriales",
+        "x": 18,
+        "y": 22,
+        "w": 24,
+        "h": 14
+      }
+    ]
+  },
+  "T11-ReproFem/t11sreprof-p16-1.png": {
+    "title": "Ovario — cuerpo lúteo hemorrágico",
+    "tema": "T11-ReproFem",
+    "labels": [
+      {
+        "text": "Cuerpo lúteo / hemorragia central",
+        "x": 35,
+        "y": 38,
+        "w": 28,
+        "h": 18
+      },
+      {
+        "text": "Células luteínicas",
+        "x": 12,
+        "y": 55,
+        "w": 24,
+        "h": 14
+      }
+    ]
+  },
+  "T11-ReproFem/t11sreprof-p16-2.png": {
+    "title": "Ovario — folículo (ovocito y zona pelúcida)",
+    "tema": "T11-ReproFem",
+    "labels": [
+      {
+        "text": "Zona pelúcida",
+        "x": 42,
+        "y": 60,
+        "w": 16,
+        "h": 12
+      },
+      {
+        "text": "Ovocito",
+        "x": 36,
+        "y": 38,
+        "w": 22,
+        "h": 16
+      },
+      {
+        "text": "Células de la granulosa",
+        "x": 8,
+        "y": 20,
+        "w": 24,
+        "h": 14
+      }
+    ]
+  },
+  "T11-ReproFem/t11sreprof-p20-2.png": {
+    "title": "Ovario — folículo de De Graaf (antral)",
+    "tema": "T11-ReproFem",
+    "labels": [
+      {
+        "text": "Antro (líquido folicular)",
+        "x": 30,
+        "y": 48,
+        "w": 30,
+        "h": 14
+      },
+      {
+        "text": "Granulosa",
+        "x": 4,
+        "y": 12,
+        "w": 14,
+        "h": 12
+      },
+      {
+        "text": "Teca folicular",
+        "x": 80,
+        "y": 10,
+        "w": 14,
+        "h": 12
+      },
+      {
+        "text": "Cúmulo oóforo / ovocito",
+        "x": 42,
+        "y": 22,
+        "w": 22,
+        "h": 16
+      }
+    ]
+  },
+  "T11-ReproFem/t11sreprof-p21-1.png": {
+    "title": "Útero — endometrio con glándulas",
+    "tema": "T11-ReproFem",
+    "labels": [
+      {
+        "text": "Glándula endometrial",
+        "x": 36,
+        "y": 70,
+        "w": 22,
+        "h": 16
+      },
+      {
+        "text": "Estroma endometrial",
+        "x": 60,
+        "y": 35,
+        "w": 24,
+        "h": 14
+      },
+      {
+        "text": "Epitelio superficial",
+        "x": 70,
+        "y": 6,
+        "w": 24,
+        "h": 12
+      }
+    ]
+  },
+  "T11-ReproFem/t11sreprof-p23-1.png": {
+    "title": "Cérvix — unión escamocolumnar (endocérvix / exocérvix)",
+    "tema": "T11-ReproFem",
+    "labels": [
+      {
+        "text": "Canal endocervical (epitelio cilíndrico)",
+        "x": 5,
+        "y": 18,
+        "w": 30,
+        "h": 14
+      },
+      {
+        "text": "Unión escamocolumnar (J)",
+        "x": 40,
+        "y": 52,
+        "w": 26,
+        "h": 12
+      },
+      {
+        "text": "Epitelio vaginal (escamoso)",
+        "x": 18,
+        "y": 78,
+        "w": 28,
+        "h": 14
+      }
+    ]
+  },
+  "T11-ReproFem/t11sreprof-p25-1.png": {
+    "title": "Vagina — epitelio y lámina propia",
+    "tema": "T11-ReproFem",
+    "labels": [
+      {
+        "text": "Epitelio escamoso estratificado no queratinizado",
+        "x": 35,
+        "y": 8,
+        "w": 30,
+        "h": 14
+      },
+      {
+        "text": "Lámina propia",
+        "x": 38,
+        "y": 50,
+        "w": 26,
+        "h": 16
+      }
+    ]
+  },
+  "T11-ReproFem/t11sreprof-p25-2.png": {
+    "title": "Vagina — capas de la pared",
+    "tema": "T11-ReproFem",
+    "labels": [
+      {
+        "text": "Mucosa",
+        "x": 55,
+        "y": 22,
+        "w": 22,
+        "h": 12
+      },
+      {
+        "text": "Muscular",
+        "x": 55,
+        "y": 52,
+        "w": 22,
+        "h": 12
+      },
+      {
+        "text": "Adventicia",
+        "x": 55,
+        "y": 82,
+        "w": 22,
+        "h": 12
+      }
+    ]
+  },
+  "T11-ReproFem/t11sreprof-p27-1.png": {
+    "title": "Ovario — cuerpo lúteo (células luteínicas)",
+    "tema": "T11-ReproFem",
+    "labels": [
+      {
+        "text": "Células luteínicas de la granulosa",
+        "x": 30,
+        "y": 35,
+        "w": 28,
+        "h": 18
+      },
+      {
+        "text": "Citoplasma vacuolado (lipídico)",
+        "x": 55,
+        "y": 60,
+        "w": 26,
+        "h": 14
+      }
+    ]
+  },
+  "T11-ReproFem/t11sreprof-p28-1.png": {
+    "title": "Ovario — corteza y médula",
+    "tema": "T11-ReproFem",
+    "labels": [
+      {
+        "text": "Corteza (C)",
+        "x": 45,
+        "y": 40,
+        "w": 18,
+        "h": 12
+      },
+      {
+        "text": "Médula (M)",
+        "x": 42,
+        "y": 58,
+        "w": 18,
+        "h": 12
+      }
+    ]
+  },
+  "T11-ReproFem/t11sreprof-p32-2.png": {
+    "title": "Ovario — cuerpo lúteo (C) y placas luteínicas (P)",
+    "tema": "T11-ReproFem",
+    "labels": [
+      {
+        "text": "Cuerpo lúteo (C)",
+        "x": 8,
+        "y": 8,
+        "w": 18,
+        "h": 12
+      },
+      {
+        "text": "Células luteínicas (P)",
+        "x": 40,
+        "y": 45,
+        "w": 22,
+        "h": 14
+      }
+    ]
+  },
+  "T11-ReproFem/t11sreprof-p33-1.png": {
+    "title": "Ovario — visión panorámica (cuerpo lúteo, folículos, atrésicos)",
+    "tema": "T11-ReproFem",
+    "labels": [
+      {
+        "text": "Cuerpo lúteo (CL)",
+        "x": 50,
+        "y": 18,
+        "w": 22,
+        "h": 18
+      },
+      {
+        "text": "Folículos (F)",
+        "x": 30,
+        "y": 78,
+        "w": 16,
+        "h": 12
+      },
+      {
+        "text": "Folículo atrésico (A)",
+        "x": 82,
+        "y": 50,
+        "w": 14,
+        "h": 12
+      },
+      {
+        "text": "Hilio ovárico (H)",
+        "x": 8,
+        "y": 20,
+        "w": 14,
+        "h": 12
+      }
+    ]
+  },
+  "T11-ReproFem/t11mamacv-p05-1.png": {
+    "title": "Mama en reposo — lobulillos y conductos",
+    "tema": "T11-ReproFem",
+    "labels": [
+      {
+        "text": "Conducto galactóforo",
+        "x": 30,
+        "y": 65,
+        "w": 24,
+        "h": 16
+      },
+      {
+        "text": "Acinos / unidades glandulares",
+        "x": 50,
+        "y": 18,
+        "w": 26,
+        "h": 14
+      },
+      {
+        "text": "Estroma conjuntivo interlobulillar",
+        "x": 8,
+        "y": 40,
+        "w": 24,
+        "h": 14
+      }
+    ]
+  },
+  "T11-ReproFem/t11mamacv-p06-1.png": {
+    "title": "Mama — células epiteliales y mioepiteliales",
+    "tema": "T11-ReproFem",
+    "labels": [
+      {
+        "text": "Células epiteliales (luminales)",
+        "x": 2,
+        "y": 4,
+        "w": 24,
+        "h": 12
+      },
+      {
+        "text": "Células mioepiteliales",
+        "x": 60,
+        "y": 22,
+        "w": 26,
+        "h": 12
+      },
+      {
+        "text": "Luz del conducto",
+        "x": 40,
+        "y": 50,
+        "w": 22,
+        "h": 14
+      }
+    ]
+  },
+  "T11-ReproFem/t11mamacv-p11-1.png": {
+    "title": "Mama en lactancia — alvéolos secretores",
+    "tema": "T11-ReproFem",
+    "labels": [
+      {
+        "text": "Alvéolo secretor",
+        "x": 30,
+        "y": 35,
+        "w": 22,
+        "h": 16
+      },
+      {
+        "text": "Luz con secreción (leche)",
+        "x": 48,
+        "y": 18,
+        "w": 20,
+        "h": 12
+      },
+      {
+        "text": "Epitelio cúbico secretor",
+        "x": 12,
+        "y": 60,
+        "w": 24,
+        "h": 14
+      }
+    ]
+  }
+};
+
+const STORAGE_KEY = 'quiz-anatomia-completo-overrides-v2';
+let DATA = JSON.parse(JSON.stringify(BASE_DATA));
+
+function loadOverrides() {
+  try {
+    const raw = localStorage.getItem(STORAGE_KEY);
+    if (!raw) return;
+    const ov = JSON.parse(raw);
+    for (const k of Object.keys(ov)) {
+      if (DATA[k]) {
+        if (ov[k].labels) DATA[k].labels = ov[k].labels;
+        if (ov[k].title) DATA[k].title = ov[k].title;
+      } else {
+        DATA[k] = ov[k];
+      }
+    }
+    setDirty(true);
+  } catch (e) { console.warn('No se pudieron cargar overrides:', e); }
+}
+
+function persistOverrides() {
+  const diff = {};
+  for (const k of Object.keys(DATA)) {
+    const a = JSON.stringify(DATA[k].labels);
+    const b = JSON.stringify((BASE_DATA[k] || {}).labels || []);
+    if (a !== b || (DATA[k].title !== (BASE_DATA[k] || {}).title)) {
+      diff[k] = { title: DATA[k].title, tema: DATA[k].tema, asignatura: DATA[k].asignatura, labels: DATA[k].labels };
+    }
+  }
+  if (Object.keys(diff).length === 0) {
+    localStorage.removeItem(STORAGE_KEY);
+    setDirty(false);
+  } else {
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(diff));
+    setDirty(true);
+  }
+}
+
+loadOverrides();
+
+// ============================================================================
+// Indexar por tema
+// ============================================================================
+const allKeys = Object.keys(DATA);
+
+function temaOf(key) { return DATA[key].tema || key.split('/')[0] || '?'; }
+
+const temas = []; // ordered list of unique tema ids
+const temaKeys = {}; // tema -> [key, ...]
+for (const k of allKeys) {
+  const t = temaOf(k);
+  if (!(t in temaKeys)) { temas.push(t); temaKeys[t] = []; }
+  temaKeys[t].push(k);
+}
+// natural sort: T02, T03, ..., T16, T22, T23...
+temas.sort((a, b) => a.localeCompare(b, undefined, { numeric: true }));
+for (const t of temas) {
+  temaKeys[t].sort((a, b) => a.localeCompare(b, undefined, { numeric: true }));
+}
+
+let currentTema = temas[0];
+let keys = temaKeys[currentTema] || [];
+let idx = 0;
+let revealMode = false;
+let editMode = false;
+let selectedBlob = null;
+
+const stage = document.getElementById('stage');
+const imgEl = document.getElementById('slideImg');
+const overlayLayer = document.getElementById('overlayLayer');
+const counterEl = document.getElementById('counter');
+const slidePillEl = document.getElementById('slidePill');
+const slideTitleEl = document.getElementById('slideTitle');
+const slideSelect = document.getElementById('slideSelect');
+const temaSelect = document.getElementById('temaSelect');
+const statsEl = document.getElementById('stats');
+const modeIndicator = document.getElementById('modeIndicator');
+const dirtyDot = document.getElementById('dirtyDot');
+
+function setDirty(state) { dirtyDot.classList.toggle('show', !!state); }
+
+// Build tema selector
+for (const t of temas) {
+  const opt = document.createElement('option');
+  opt.value = t;
+  opt.textContent = `${t} (${temaKeys[t].length} img)`;
+  temaSelect.appendChild(opt);
+}
+
+function buildSlideSelect() {
+  slideSelect.innerHTML = '';
+  keys.forEach((k, i) => {
+    const opt = document.createElement('option');
+    opt.value = String(i);
+    const slideNum = k.match(/p(\d+)/)?.[1] ?? '?';
+    opt.textContent = `p${slideNum} — ${DATA[k].title || k}`;
+    slideSelect.appendChild(opt);
+  });
+}
+
+function setTema(t, newIdx) {
+  if (!(t in temaKeys)) return;
+  currentTema = t;
+  keys = temaKeys[t];
+  idx = (typeof newIdx === 'number') ? Math.max(0, Math.min(newIdx, keys.length - 1)) : 0;
+  temaSelect.value = t;
+  buildSlideSelect();
+  render();
+}
+
+function currentLabels() { return DATA[keys[idx]].labels || []; }
+
+function render() {
+  const key = keys[idx];
+  const entry = DATA[key];
+  imgEl.src = `_quiz_imgs/${key}`;
+  imgEl.alt = entry.title || key;
+  counterEl.textContent = `${idx + 1} / ${keys.length}`;
+  const slideNum = key.match(/p(\d+)/)?.[1] ?? '?';
+  slidePillEl.textContent = `${entry.tema || currentTema} · p${slideNum}`;
+  slideTitleEl.textContent = entry.title || '(sin título)';
+  slideSelect.value = String(idx);
+
+  overlayLayer.innerHTML = '';
+  selectedBlob = null;
+  const labels = entry.labels || [];
+  labels.forEach((lab, i) => {
+    overlayLayer.appendChild(makeBlob(lab, i));
+  });
+
+  stage.classList.toggle('reveal-mode', revealMode && !editMode);
+  stage.classList.toggle('edit-mode', editMode);
+  document.body.classList.toggle('edit-active', editMode);
+  modeIndicator.innerHTML = `Modo: <b>${editMode ? 'Edición' : (revealMode ? 'Respuesta' : 'Quiz')}</b>`;
+  updateStats();
+}
+
+function makeBlob(lab, i) {
+  const b = document.createElement('div');
+  b.className = 'blob';
+  b.dataset.idx = String(i);
+  applyLabToBlob(b, lab);
+  b.title = lab.text + ' — click para revelar/ocultar';
+
+  b.addEventListener('click', (e) => {
+    if (editMode) return;
+    b.classList.toggle('revealed');
+    updateStats();
+  });
+
+  b.addEventListener('mousedown', (e) => {
+    if (!editMode) return;
+    e.preventDefault();
+    selectBlob(b);
+    const isHandle = e.target.classList.contains('handle');
+    startDragOrResize(b, e, isHandle);
+  });
+  b.addEventListener('dblclick', (e) => {
+    if (!editMode) return;
+    e.preventDefault();
+    const idx = +b.dataset.idx;
+    const cur = currentLabels()[idx];
+    const next = prompt('Texto de la etiqueta:', cur.text);
+    if (next !== null && next.trim()) {
+      cur.text = next.trim();
+      b.title = cur.text + ' — click para revelar/ocultar';
+      b.querySelector('.label-text').textContent = cur.text;
+      persistOverrides();
+    }
+  });
+
+  const tag = document.createElement('div');
+  tag.className = 'label-text';
+  tag.textContent = lab.text;
+  b.appendChild(tag);
+  const handle = document.createElement('div');
+  handle.className = 'handle';
+  b.appendChild(handle);
+  return b;
+}
+
+function applyLabToBlob(b, lab) {
+  b.style.left = `${lab.x}%`;
+  b.style.top = `${lab.y}%`;
+  b.style.width = `${lab.w}%`;
+  b.style.height = `${lab.h}%`;
+}
+
+function selectBlob(b) {
+  overlayLayer.querySelectorAll('.blob.selected').forEach(x => x.classList.remove('selected'));
+  if (b) b.classList.add('selected');
+  selectedBlob = b;
+}
+
+function stageRect() { return stage.getBoundingClientRect(); }
+
+function startDragOrResize(b, downEvt, isResize) {
+  const rect = stageRect();
+  const lab = currentLabels()[+b.dataset.idx];
+  const startMouseX = downEvt.clientX, startMouseY = downEvt.clientY;
+  const startX = lab.x, startY = lab.y, startW = lab.w, startH = lab.h;
+
+  function onMove(ev) {
+    const dxPct = ((ev.clientX - startMouseX) / rect.width) * 100;
+    const dyPct = ((ev.clientY - startMouseY) / rect.height) * 100;
+    if (isResize) {
+      lab.w = clamp(startW + dxPct, 1, 100 - lab.x);
+      lab.h = clamp(startH + dyPct, 1, 100 - lab.y);
+    } else {
+      lab.x = clamp(startX + dxPct, 0, 100 - lab.w);
+      lab.y = clamp(startY + dyPct, 0, 100 - lab.h);
+    }
+    applyLabToBlob(b, lab);
+  }
+  function onUp() {
+    document.removeEventListener('mousemove', onMove);
+    document.removeEventListener('mouseup', onUp);
+    persistOverrides();
+  }
+  document.addEventListener('mousemove', onMove);
+  document.addEventListener('mouseup', onUp);
+}
+
+function clamp(v, lo, hi) { return Math.max(lo, Math.min(hi, v)); }
+
+stage.addEventListener('dblclick', (e) => {
+  if (!editMode) return;
+  if (e.target !== stage && e.target !== imgEl && e.target !== overlayLayer) return;
+  const rect = stageRect();
+  const x = ((e.clientX - rect.left) / rect.width) * 100;
+  const y = ((e.clientY - rect.top) / rect.height) * 100;
+  const text = prompt('Texto de la nueva etiqueta:');
+  if (!text || !text.trim()) return;
+  const newLab = { text: text.trim(), x: clamp(x - 6, 0, 88), y: clamp(y - 3, 0, 94), w: 12, h: 6 };
+  currentLabels().push(newLab);
+  const b = makeBlob(newLab, currentLabels().length - 1);
+  overlayLayer.appendChild(b);
+  selectBlob(b);
+  persistOverrides();
+});
+
+function updateStats() {
+  const total = overlayLayer.querySelectorAll('.blob').length;
+  const revealed = overlayLayer.querySelectorAll('.blob.revealed').length;
+  if (editMode) {
+    statsEl.innerHTML = `<b>${total}</b> etiquetas en esta diapositiva (modo edición)`;
+  } else if (total === 0) {
+    statsEl.innerHTML = '<b>Sin etiquetas</b> en esta imagen.';
+  } else {
+    statsEl.innerHTML = `<b>${revealed}</b> / ${total} etiquetas reveladas`;
+  }
+}
+
+function setRevealAll(state) {
+  const blobs = overlayLayer.querySelectorAll('.blob');
+  blobs.forEach((b) => {
+    if (state) b.classList.add('revealed'); else b.classList.remove('revealed');
+    b.classList.add('flash');
+    setTimeout(() => b.classList.remove('flash'), 260);
+  });
+  updateStats();
+}
+
+// ============================================================================
+// Toolbar handlers
+// ============================================================================
+temaSelect.addEventListener('change', () => setTema(temaSelect.value, 0));
+document.getElementById('prevBtn').addEventListener('click', () => { idx = (idx - 1 + keys.length) % keys.length; render(); });
+document.getElementById('nextBtn').addEventListener('click', () => { idx = (idx + 1) % keys.length; render(); });
+document.getElementById('revealAllBtn').addEventListener('click', () => setRevealAll(true));
+document.getElementById('hideAllBtn').addEventListener('click', () => setRevealAll(false));
+document.getElementById('toggleAnswerBtn').addEventListener('click', (e) => {
+  revealMode = !revealMode;
+  e.target.textContent = revealMode ? 'Modo quiz' : 'Modo respuesta';
+  e.target.classList.toggle('primary', !revealMode);
+  e.target.classList.toggle('danger', revealMode);
+  render();
+});
+slideSelect.addEventListener('change', () => { idx = parseInt(slideSelect.value, 10) || 0; render(); });
+
+document.getElementById('randomBtn').addEventListener('click', () => {
+  const all = Object.keys(DATA);
+  const k = all[Math.floor(Math.random() * all.length)];
+  const t = temaOf(k);
+  const i = temaKeys[t].indexOf(k);
+  setTema(t, i);
+});
+
+const editBtn = document.getElementById('editBtn');
+editBtn.addEventListener('click', () => {
+  editMode = !editMode;
+  editBtn.classList.toggle('active', editMode);
+  editBtn.textContent = editMode ? '✓ Editando' : '✎ Editar';
+  render();
+});
+
+document.getElementById('saveBtn').addEventListener('click', async () => {
+  const blob = new Blob([JSON.stringify(DATA, null, 2)], { type: 'application/json' });
+  if (window.showSaveFilePicker) {
+    try {
+      const handle = await window.showSaveFilePicker({
+        suggestedName: 'labels-completo.json',
+        types: [{ description: 'JSON', accept: { 'application/json': ['.json'] } }]
+      });
+      const w = await handle.createWritable();
+      await w.write(blob); await w.close();
+      alert('Guardado. Ahora ejecuta:\n\npython _build/build_quiz_master.py\n\npara que el HTML use los nuevos datos al recargar.');
+      return;
+    } catch (e) {
+      if (e && e.name === 'AbortError') return;
+      console.warn('showSaveFilePicker falló, descargando:', e);
+    }
+  }
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(blob);
+  a.download = 'labels-completo.json';
+  document.body.appendChild(a); a.click(); a.remove();
+  alert('Se descargó labels-completo.json. Muévelo a:\napuntes-presentaciones/labels-completo.json\n\ny ejecuta:\npython _build/build_quiz_master.py');
+});
+
+document.getElementById('loadBtn').addEventListener('click', async () => {
+  const input = document.createElement('input');
+  input.type = 'file'; input.accept = '.json,application/json';
+  input.addEventListener('change', async () => {
+    const file = input.files[0]; if (!file) return;
+    try {
+      const text = await file.text();
+      const loaded = JSON.parse(text);
+      for (const k of Object.keys(loaded)) {
+        if (DATA[k]) {
+          DATA[k].labels = loaded[k].labels || DATA[k].labels;
+          if (loaded[k].title) DATA[k].title = loaded[k].title;
+        } else {
+          DATA[k] = loaded[k];
+        }
+      }
+      persistOverrides();
+      render();
+    } catch (e) { alert('Error leyendo JSON: ' + e.message); }
+  });
+  input.click();
+});
+
+document.getElementById('resetBtn').addEventListener('click', () => {
+  if (!confirm('Descartar todos los cambios locales y volver a los datos originales del HTML?')) return;
+  localStorage.removeItem(STORAGE_KEY);
+  DATA = JSON.parse(JSON.stringify(BASE_DATA));
+  setDirty(false);
+  render();
+});
+
+// ============================================================================
+// Keyboard
+// ============================================================================
+document.addEventListener('keydown', (e) => {
+  if (e.target.tagName === 'SELECT' || e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA') return;
+
+  if (editMode && selectedBlob) {
+    const lab = currentLabels()[+selectedBlob.dataset.idx];
+    const step = e.shiftKey ? 0.1 : 0.5;
+    let handled = true;
+    if (e.key === 'ArrowLeft')  { lab.x = clamp(lab.x - step, 0, 100 - lab.w); }
+    else if (e.key === 'ArrowRight') { lab.x = clamp(lab.x + step, 0, 100 - lab.w); }
+    else if (e.key === 'ArrowUp')    { lab.y = clamp(lab.y - step, 0, 100 - lab.h); }
+    else if (e.key === 'ArrowDown')  { lab.y = clamp(lab.y + step, 0, 100 - lab.h); }
+    else if (e.key === '+' || e.key === '=') { lab.w = clamp(lab.w + step, 1, 100 - lab.x); lab.h = clamp(lab.h + step, 1, 100 - lab.y); }
+    else if (e.key === '-' || e.key === '_') { lab.w = clamp(lab.w - step, 1, 100 - lab.x); lab.h = clamp(lab.h - step, 1, 100 - lab.y); }
+    else if (e.key === 'Delete' || e.key === 'Backspace') {
+      if (confirm('Borrar esta etiqueta?')) {
+        const i = +selectedBlob.dataset.idx;
+        currentLabels().splice(i, 1);
+        render();
+        persistOverrides();
+      }
+    }
+    else if (e.key === 'Escape') { selectBlob(null); }
+    else handled = false;
+    if (handled) {
+      e.preventDefault();
+      applyLabToBlob(selectedBlob, lab);
+      persistOverrides();
+      return;
+    }
+  }
+
+  if (e.key === 'ArrowLeft' || e.key === 'PageUp') { idx = (idx - 1 + keys.length) % keys.length; render(); }
+  else if (e.key === 'ArrowRight' || e.key === 'PageDown' || e.key === ' ') { e.preventDefault(); idx = (idx + 1) % keys.length; render(); }
+  else if (e.key.toLowerCase() === 'r' && !editMode) setRevealAll(true);
+  else if (e.key.toLowerCase() === 'h' && !editMode) setRevealAll(false);
+  else if (e.key.toLowerCase() === 'a' && !editMode) document.getElementById('toggleAnswerBtn').click();
+  else if (e.key.toLowerCase() === 'e') editBtn.click();
+});
+
+setTema(currentTema, 0);
+</script>
+</body>
+</html>
